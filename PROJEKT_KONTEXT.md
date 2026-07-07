@@ -84,7 +84,9 @@ Dateien wurden am 2026-07-07 aus `codebase/html|css|js/` flach ins Root verschob
 - [x] **Kapitel 1 (Einführung)** fertig — `kapitel-01.html` (5 Module)
 - [x] **Kapitel 2 (Grundlagen)** fertig — `kapitel-02.html` (6 Module; Modul 6 = echte Übungsfragen SS14)
 - [x] **Kapitel 3 (Prozesse)** fertig — `kapitel-03.html` (6 Module; Modul 6 = echte Klausuren SS08 A1d, SS11 A2a, Ü1 1d/1e)
-- [ ] Kapitel 4–10
+- [x] **Kapitel 4 (Scheduling)** fertig — `kapitel-04.html` (6 Module; SVGs: Ziele-Hub, RR-Zeitdiagramm, EDF-Gantt, RMS-Gantt; Modul 6 = SS09 A1, SS08, SS21 Q2 RMS-Rechnung, WS1920 Prioritätsinvertierung)
+- [x] **Kapitel 5 (Threads)** fertig — `kapitel-05.html` (5 Module; SVGs: Thread-Speichermodell, Benutzer-/Kernel-Thread-Modelle; Modul 5 = SS08 A1a/b/c/d/e)
+- [ ] Kapitel 6–10
 - [x] Altklausuren-Modul-Muster etabliert (jeweils letztes Modul)
 
 ## Vorlage einer Kapitelseite (an kapitel-01.html orientieren!)
