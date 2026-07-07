@@ -1,0 +1,347 @@
+/* =========================================================================
+   Betriebssysteme – Hub / Homepage
+   ========================================================================= */
+
+:root {
+  --bg: #0d1117;
+  --bg-soft: #161b22;
+  --bg-card: #1a2029;
+  --bg-card-hover: #212a36;
+  --border: #2a3441;
+  --border-soft: #222b36;
+  --text: #e6edf3;
+  --text-dim: #9aa7b4;
+  --text-faint: #6b7684;
+  --accent: #5b8cff;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --font: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(91, 140, 255, 0.12), transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, rgba(187, 107, 217, 0.10), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---------------------------------------------------------------- Header */
+header.hero {
+  padding: 72px 0 40px;
+  text-align: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin-bottom: 22px;
+}
+
+.eyebrow .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3fb950;
+  box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.2);
+}
+
+.hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin-bottom: 16px;
+}
+
+.hero h1 .grad {
+  background: linear-gradient(120deg, #5b8cff, #bb6bd9 55%, #56ccf2);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero p.lead {
+  max-width: 640px;
+  margin: 0 auto;
+  color: var(--text-dim);
+  font-size: 1.08rem;
+}
+
+/* --------------------------------------------------------------- Stats */
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+
+.stat {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 20px;
+  min-width: 120px;
+}
+
+.stat .num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat .lbl {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* --------------------------------------------------------- Section head */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 48px 0 22px;
+  flex-wrap: wrap;
+}
+
+.section-head h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.section-head .hint {
+  color: var(--text-faint);
+  font-size: 0.9rem;
+}
+
+/* --------------------------------------------------------------- Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  padding-bottom: 60px;
+}
+
+/* --------------------------------------------------------------- Card */
+.card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 22px 18px;
+  overflow: hidden;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+}
+
+/* farbiger Balken oben, pro Kapitel */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--card-accent, var(--accent));
+  opacity: 0.9;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--card-accent, var(--accent));
+  background: var(--bg-card-hover);
+}
+
+.card__top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.card__badge {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  background: color-mix(in srgb, var(--card-accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-accent) 40%, transparent);
+}
+
+.card__nr {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.card h3 {
+  font-size: 1.22rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.card p.desc {
+  color: var(--text-dim);
+  font-size: 0.94rem;
+  margin-bottom: 14px;
+}
+
+.card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.tag {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
+/* Footer mit den beiden Aktionen */
+.card__footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--open {
+  flex: 1;
+  justify-content: center;
+  color: #fff;
+  background: color-mix(in srgb, var(--card-accent) 85%, black 5%);
+}
+
+.btn--open:hover {
+  background: var(--card-accent);
+}
+
+.btn--pdf {
+  color: var(--text);
+  background: var(--bg-soft);
+  border-color: var(--border);
+}
+
+.btn--pdf:hover {
+  border-color: var(--card-accent);
+  color: #fff;
+}
+
+.btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Karte "in Arbeit" Zustand für Unterseiten, die noch leer sind */
+.card__soon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* --------------------------------------------------------------- Footer */
+footer.site {
+  border-top: 1px solid var(--border-soft);
+  padding: 26px 0 48px;
+  color: var(--text-faint);
+  font-size: 0.86rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+footer.site a {
+  color: var(--text-dim);
+  text-decoration: none;
+}
+
+footer.site a:hover {
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------- Mobile */
+@media (max-width: 560px) {
+  header.hero {
+    padding: 48px 0 28px;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .card__footer {
+    flex-wrap: wrap;
+  }
+  .btn--open {
+    flex: 1 1 100%;
+  }
+}

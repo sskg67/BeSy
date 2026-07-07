@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Betriebssysteme · Mega-Zusammenfassung</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>" />
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- ============================================================ HERO -->
+    <header class="hero">
+      <span class="eyebrow"><span class="dot"></span> Lern-Hub · Modul Betriebssysteme</span>
+      <h1>Betriebssysteme<br /><span class="grad">Mega-Zusammenfassung</span></h1>
+      <p class="lead">
+        Zehn Kapitel, Modul für Modul erklärt – mit anschaulichen Skizzen,
+        Diagrammen und Verständnisfragen. Wähle ein Kapitel oder öffne direkt
+        das zugehörige Skript-PDF.
+      </p>
+
+      <div class="stats">
+        <div class="stat"><div class="num">10</div><div class="lbl">Kapitel</div></div>
+        <div class="stat"><div class="num">Module</div><div class="lbl">pro Kapitel</div></div>
+        <div class="stat"><div class="num">Fragen</div><div class="lbl">zum Testen</div></div>
+        <div class="stat"><div class="num">Altklausuren</div><div class="lbl">integriert</div></div>
+      </div>
+    </header>
+
+    <!-- ========================================================= KAPITEL -->
+    <div class="section-head">
+      <h2>Kapitel</h2>
+      <span class="hint">Kachel = Kapitel öffnen · <b>PDF</b> = Skript ansehen</span>
+    </div>
+
+    <main class="grid" id="chapterGrid" aria-label="Kapitelübersicht">
+      <!-- Karten werden per JS aus chapters.js erzeugt -->
+    </main>
+
+    <!-- ========================================================== FOOTER -->
+    <footer class="site">
+      <span>Betriebssysteme · persönliche Zusammenfassung</span>
+      <span>Stand: <span id="year"></span> · <a href="Altprüfungen/">Altprüfungen-Ordner</a></span>
+    </footer>
+
+  </div>
+
+  <script src="js/chapters.js"></script>
+  <script>
+    // ------- SVG-Icons ---------------------------------------------------
+    const ICON_OPEN =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
+    const ICON_PDF =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 18h4"/></svg>';
+
+    // ------- Karten rendern ---------------------------------------------
+    const grid = document.getElementById("chapterGrid");
+
+    CHAPTERS.forEach((ch) => {
+      const pdfHref = PDF_BASE + encodeURIComponent(ch.pdf);
+      const pageHref = ch.slug + ".html";
+
+      const tags = ch.topics
+        .map((t) => `<span class="tag">${t}</span>`)
+        .join("");
+
+      const card = document.createElement("article");
+      card.className = "card";
+      card.style.setProperty("--card-accent", ch.accent);
+      card.dataset.href = pageHref;
+
+      card.innerHTML = `
+        <div class="card__top">
+          <div class="card__badge">${ch.icon}</div>
+          <span class="card__nr">Kapitel ${String(ch.nr).padStart(2, "0")}</span>
+        </div>
+        <h3>${ch.title}</h3>
+        <p class="desc">${ch.subtitle}</p>
+        <div class="card__tags">${tags}</div>
+        <div class="card__footer">
+          <a class="btn btn--open" href="${pageHref}">${ICON_OPEN} Kapitel öffnen</a>
+          <a class="btn btn--pdf" href="${pdfHref}" target="_blank" rel="noopener"
+             title="Skript-PDF ansehen">${ICON_PDF} PDF</a>
+        </div>
+      `;
+
+      // Ganze Karte klickbar -> Kapitelseite (echte Links behalten ihr Verhalten)
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("a")) return;
+        window.location.href = pageHref;
+      });
+
+      grid.appendChild(card);
+    });
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

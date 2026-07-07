@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kapitel 2 · Grundlagen · Betriebssysteme</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/chapter.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧱</text></svg>" />
+</head>
+<body class="chapter" style="--chapter-accent:#22c1a4;">
+  <div class="progress"></div>
+
+  <!-- ============================================================ TOPBAR -->
+  <div class="topbar">
+    <div class="topbar__inner">
+      <a class="home" href="index.html">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg>
+        Hub
+      </a>
+      <span class="crumb">Kapitel 02 · <b>Grundlagen</b></span>
+      <span class="spacer"></span>
+      <a class="pdf-link" href="Themen/OS_2_Grundlagen.pdf" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Skript-PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- ============================================================ LAYOUT -->
+  <div class="chapter-layout">
+
+    <!-- Inhaltsverzeichnis -->
+    <nav class="toc">
+      <div class="toc-title">Module</div>
+      <ol>
+        <li><a href="#modul-1"><span class="mod-num">1</span>Von-Neumann-Architektur</a></li>
+        <li><a href="#modul-2"><span class="mod-num">2</span>Register &amp; Befehlszyklus</a></li>
+        <li><a href="#modul-3"><span class="mod-num">3</span>Rechenzustand &amp; Interrupts</a></li>
+        <li><a href="#modul-4"><span class="mod-num">4</span>Speicherhierarchie</a></li>
+        <li><a href="#modul-5"><span class="mod-num">5</span>Vom Programm zur Maschine</a></li>
+        <li><a href="#modul-6"><span class="mod-num">6</span>Übungsaufgaben</a></li>
+      </ol>
+    </nav>
+
+    <!-- Hauptinhalt -->
+    <main class="content">
+
+      <!-- Kapitel-Kopf -->
+      <header class="chapter-hero">
+        <div class="kicker"><span class="ico">🧱</span> Kapitel 02</div>
+        <h1>Grundlagen der Rechnerarchitektur</h1>
+        <p class="intro">
+          Bevor wir verstehen, <em>wie</em> ein Betriebssystem Prozesse verwaltet,
+          brauchen wir das <strong>Fundament</strong>: Wie ist ein Rechner aufgebaut,
+          wie führt die CPU Befehle aus, was ist der „Zustand“ einer Berechnung, und
+          wie kommt ein Programm überhaupt in den Speicher? Genau das klärt dieses
+          Kapitel – es ist die Grundlage für <strong>Prozesse</strong> (Kap.&nbsp;3)
+          und <strong>Kontextwechsel</strong>.
+        </p>
+
+        <div class="goals">
+          <h4>Nach diesem Kapitel kannst du …</h4>
+          <ul>
+            <li>die Von-Neumann-Architektur und ihre Bestandteile erklären</li>
+            <li>den Befehlszyklus (Fetch–Decode–Execute) und die Registertypen beschreiben</li>
+            <li>erklären, was den „Rechenzustand“ ausmacht und warum man ihn sichern kann</li>
+            <li>Interrupts und die Speicherhierarchie (flüchtig/persistent) einordnen</li>
+            <li>den Weg vom Quellcode über Compiler/Linker/Loader bis in den Speicher nachvollziehen</li>
+          </ul>
+        </div>
+      </header>
+
+      <!-- =================================================== MODUL 1 -->
+      <section class="module" id="modul-1">
+        <div class="module__head">
+          <div class="module__num">1</div>
+          <h2>Die Von-Neumann-Architektur</h2>
+        </div>
+
+        <p class="lead">
+          Fast alle heutigen Rechner folgen der <strong>Von-Neumann-Architektur</strong>.
+          Ihr Kernprinzip: <em>Befehle und Daten liegen im selben Hauptspeicher</em> und
+          werden über einen gemeinsamen Bus transportiert.
+        </p>
+
+        <p>Sie besteht aus vier Bausteinen:</p>
+        <ul>
+          <li><strong>Zentraleinheit (CPU)</strong> – enthält das <strong>Rechen- und
+              Steuerwerk</strong> sowie die <strong>Register</strong> (schnelle
+              Zwischenspeicher).</li>
+          <li><strong>Hauptspeicher</strong> – eine durchnummerierte (adressierte) Folge
+              von Zellen, in denen sowohl <strong>Befehle</strong> als auch
+              <strong>Daten</strong> stehen.</li>
+          <li><strong>Systembus</strong> – die „Datenautobahn“, über die alles
+              transportiert wird.</li>
+          <li><strong>E/A-Geräte</strong> – Ein-/Ausgabe (Tastatur, Bildschirm, Platte …).</li>
+        </ul>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 380" role="img" aria-label="Von-Neumann-Architektur">
+            <!-- CPU -->
+            <text class="sk-label" x="175" y="30" text-anchor="middle">Zentraleinheit (CPU)</text>
+            <rect class="sk-accent" x="70" y="44" width="210" height="150" rx="10"/>
+            <rect class="sk-box" x="90"  y="60" width="70" height="26" rx="4"/>
+            <rect class="sk-box" x="190" y="60" width="70" height="26" rx="4"/>
+            <rect class="sk-box" x="90"  y="94" width="70" height="26" rx="4"/>
+            <rect class="sk-box" x="190" y="94" width="70" height="26" rx="4"/>
+            <text class="sk-faint" x="175" y="79" text-anchor="middle">Register</text>
+            <rect class="sk-box" x="120" y="134" width="110" height="42" rx="6"/>
+            <text class="sk-sub" x="175" y="152" text-anchor="middle">Rechen- &amp;</text>
+            <text class="sk-sub" x="175" y="168" text-anchor="middle">Steuerwerk</text>
+
+            <!-- Hauptspeicher -->
+            <text class="sk-label" x="600" y="30" text-anchor="middle">Hauptspeicher</text>
+            <rect class="sk-box" x="520" y="44" width="150" height="230" rx="6"/>
+            <line class="sk-line" x1="520" y1="80"  x2="670" y2="80"/>
+            <line class="sk-line" x1="520" y1="112" x2="670" y2="112"/>
+            <line class="sk-line" x1="520" y1="144" x2="670" y2="144"/>
+            <line class="sk-line" x1="520" y1="200" x2="670" y2="200"/>
+            <line class="sk-line" x1="520" y1="232" x2="670" y2="232"/>
+            <text class="sk-sub" x="595" y="72"  text-anchor="middle">Befehl 1</text>
+            <text class="sk-sub" x="595" y="104" text-anchor="middle">Befehl 2</text>
+            <text class="sk-sub" x="595" y="136" text-anchor="middle">Befehl 3</text>
+            <text class="sk-sub" x="595" y="192" text-anchor="middle">Datenfeld 1</text>
+            <text class="sk-sub" x="595" y="224" text-anchor="middle">Datenfeld 2</text>
+
+            <!-- Systembus -->
+            <rect x="70" y="292" width="600" height="16" rx="4" fill="#22c1a4" opacity="0.85"/>
+            <text class="sk-label" x="70" y="336" text-anchor="start">Systembus</text>
+
+            <!-- Verbindungen -->
+            <line x1="175" y1="194" x2="175" y2="292" stroke="#8a97a4" stroke-width="3"/>
+            <line x1="595" y1="274" x2="595" y2="292" stroke="#8a97a4" stroke-width="3"/>
+
+            <!-- E/A-Geräte -->
+            <text class="sk-label" x="330" y="374" text-anchor="middle">E/A-Geräte</text>
+            <rect class="sk-box" x="300" y="326" width="34" height="34" rx="4"/>
+            <rect class="sk-box" x="344" y="326" width="34" height="34" rx="4"/>
+            <rect class="sk-box" x="388" y="326" width="34" height="34" rx="4"/>
+            <line x1="317" y1="326" x2="317" y2="308" stroke="#8a97a4" stroke-width="3"/>
+            <line x1="361" y1="326" x2="361" y2="308" stroke="#8a97a4" stroke-width="3"/>
+            <line x1="405" y1="326" x2="405" y2="308" stroke="#8a97a4" stroke-width="3"/>
+          </svg>
+          <figcaption>Von-Neumann-Architektur: CPU, Hauptspeicher und E/A-Geräte, verbunden über den Systembus.</figcaption>
+        </figure>
+
+        <div class="callout callout--merke">
+          <div class="cico">📌</div>
+          <div class="callout__body">
+            <p><strong>Kernidee Von-Neumann:</strong> Befehle <u>und</u> Daten stehen im
+            <strong>selben</strong> Speicher und sind nur durch ihre Verwendung
+            unterscheidbar. Das macht Programme flexibel (Code kann wie Daten behandelt
+            werden), ist aber auch die Ursache des berühmten „Von-Neumann-Flaschenhalses“
+            – Befehle und Daten teilen sich denselben Bus.</p>
+          </div>
+        </div>
+
+        <!-- Fragen Modul 1 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Nenne die vier Bausteine der Von-Neumann-Architektur.</summary>
+            <div class="answer"><strong>CPU</strong> (Rechen-/Steuerwerk + Register),
+              <strong>Hauptspeicher</strong>, <strong>Systembus</strong> und
+              <strong>E/A-Geräte</strong>.</div>
+          </details>
+          <details class="q">
+            <summary>2. Was ist das zentrale Prinzip der Von-Neumann-Architektur?</summary>
+            <div class="answer"><strong>Befehle und Daten liegen im selben
+              Hauptspeicher</strong> (gemeinsam adressiert) und werden über einen
+              gemeinsamen Bus transportiert.</div>
+          </details>
+          <details class="q">
+            <summary>3. Woraus besteht die CPU?</summary>
+            <div class="answer">Aus dem <strong>Rechen- und Steuerwerk</strong> und den
+              <strong>Registern</strong> (sehr schnelle Zwischenspeicher direkt in der CPU).</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 2 -->
+      <section class="module" id="modul-2">
+        <div class="module__head">
+          <div class="module__num">2</div>
+          <h2>Register &amp; Befehlszyklus</h2>
+        </div>
+
+        <p class="lead">
+          Die CPU arbeitet in einem ewigen Takt: Befehl holen → dekodieren →
+          ausführen. Damit das funktioniert, braucht sie verschiedene
+          <strong>Register</strong>.
+        </p>
+
+        <h3>Die wichtigsten Registertypen</h3>
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Register</th><th>Funktion</th></tr></thead>
+            <tbody>
+              <tr><td>Befehlsregister</td><td>hält den aktuellen Befehl (z.&nbsp;B. Read/Write, +, −, AND …)</td></tr>
+              <tr><td>Programmzähler (PC)</td><td>Adresse des <strong>nächsten</strong> Befehls</td></tr>
+              <tr><td>Datenregister</td><td>geladene Werte &amp; Zwischenergebnisse; herausgehoben der <strong>Akkumulator</strong>; oft dedizierte Register für Gleitkomma (FPU)</td></tr>
+              <tr><td>Adressregister</td><td>zeigen auf den Hauptspeicher, z.&nbsp;B. der <strong>Stapelregister</strong> (Stack Pointer)</td></tr>
+              <tr><td>Programmstatuswort (PSW)</td><td>aktueller Rechenzustand: Unterbrechungszustand, <strong>Modus (User/Kernel)</strong>, boolesche Ergebnisse der letzten Operation</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Der Befehlszyklus (Fetch–Decode–Execute)</h3>
+        <p>
+          Für jeden Befehl wiederholt die CPU denselben Ablauf. Der Programmzähler
+          zeigt dabei stets auf den nächsten auszuführenden Befehl und wird nach dem
+          Holen erhöht (oder bei Sprüngen umgesetzt).
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 680 250" role="img" aria-label="Befehlszyklus Fetch Decode Execute">
+            <!-- Rückführung oben -->
+            <path class="sk-arrow" d="M560 70 C560 20, 120 20, 120 66" marker-end="url(#ah2)"/>
+            <text class="sk-faint" x="340" y="24" text-anchor="middle">PC := PC + 1  (nächster Befehl; bei Sprung: neue Adresse)</text>
+
+            <!-- 3 Stufen -->
+            <rect class="sk-accent" x="40"  y="80" width="160" height="70" rx="10"/>
+            <text class="sk-label" x="120" y="112" text-anchor="middle">1 · Holen</text>
+            <text class="sk-sub" x="120" y="132" text-anchor="middle">Befehl aus Speicher</text>
+
+            <rect class="sk-box" x="260" y="80" width="160" height="70" rx="10"/>
+            <text class="sk-label" x="340" y="112" text-anchor="middle">2 · Dekodieren</text>
+            <text class="sk-sub" x="340" y="132" text-anchor="middle">Befehl auswerten</text>
+
+            <rect class="sk-box" x="480" y="80" width="160" height="70" rx="10"/>
+            <text class="sk-label" x="560" y="112" text-anchor="middle">3 · Ausführen</text>
+            <text class="sk-sub" x="560" y="132" text-anchor="middle">Rechnen / Speichern</text>
+
+            <path class="sk-arrow" d="M200 115 L258 115" marker-end="url(#ah2)"/>
+            <path class="sk-arrow" d="M420 115 L478 115" marker-end="url(#ah2)"/>
+
+            <text class="sk-faint" x="340" y="210" text-anchor="middle">Das PSW entscheidet bei Verzweigungen, ob z.&#160;B. gesprungen wird (bedingter Jump).</text>
+            <defs>
+              <marker id="ah2" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#22c1a4"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>Der Befehlszyklus wiederholt sich für jeden Befehl. Der Programmzähler steuert die Reihenfolge.</figcaption>
+        </figure>
+
+        <div class="callout callout--note">
+          <div class="cico">💡</div>
+          <div class="callout__body">
+            <p><strong>Verzweigende Ausführung (Schleifen/if):</strong> Nach einer
+            Vergleichsoperation stehen die booleschen Ergebnisse im <strong>PSW</strong>.
+            Ein bedingter Sprung setzt daraufhin den <strong>Programmzähler</strong>
+            entweder auf die Sprungadresse (Bedingung erfüllt) oder auf den nächsten
+            Befehl (PC := PC+1). So werden aus einfachen Befehlen Schleifen und
+            Verzweigungen.</p>
+          </div>
+        </div>
+
+        <!-- Fragen Modul 2 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Wozu dient der Programmzähler (PC)?</summary>
+            <div class="answer">Er enthält die <strong>Adresse des nächsten
+              auszuführenden Befehls</strong>. Nach dem Holen wird er erhöht bzw. bei
+              Sprüngen auf eine neue Adresse gesetzt.</div>
+          </details>
+          <details class="q">
+            <summary>2. Was speichert das Programmstatuswort (PSW)? Nenne drei Dinge.</summary>
+            <div class="answer">Den aktuellen Rechenzustand: <strong>Unterbrechungszustand</strong>,
+              den <strong>Modus (User Mode / Kernel Mode)</strong> und die
+              <strong>booleschen Ergebnisse</strong> der letzten arithmetischen bzw.
+              Vergleichsoperation.</div>
+          </details>
+          <details class="q">
+            <summary>3. Beschreibe die drei Phasen des Befehlszyklus.</summary>
+            <div class="answer"><strong>Holen (Fetch):</strong> Befehl aus dem Speicher
+              (Adresse aus PC) holen. <strong>Dekodieren (Decode):</strong> Befehl
+              auswerten. <strong>Ausführen (Execute):</strong> Operation durchführen
+              (rechnen, laden, speichern).</div>
+          </details>
+          <details class="q">
+            <summary>4. Wie entsteht eine Schleife auf Maschinenebene?</summary>
+            <div class="answer">Durch einen <strong>bedingten Sprung</strong>: Eine
+              Vergleichsoperation setzt das PSW; ein Sprungbefehl setzt den
+              <strong>PC</strong> abhängig davon zurück auf den Schleifenanfang oder
+              lässt ihn weiterlaufen.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 3 -->
+      <section class="module" id="modul-3">
+        <div class="module__head">
+          <div class="module__num">3</div>
+          <h2>Rechenzustand &amp; Interrupts</h2>
+        </div>
+
+        <p class="lead">
+          Dieses Modul enthält die vielleicht <strong>wichtigste Idee</strong> für die
+          nächsten Kapitel – merke sie dir gut.
+        </p>
+
+        <h3>Der Rechenzustand</h3>
+        <p>
+          Der <strong>Zustand</strong> eines Rechners lässt sich (in erster Näherung)
+          vollständig beschreiben durch:
+        </p>
+        <ul>
+          <li>den <strong>Inhalt des Hauptspeichers</strong> („was steht auf welcher Adresse“)</li>
+          <li>den <strong>Inhalt aller Register</strong> (inkl. Befehlsregister, Programmzähler, Akkumulator, PSW …)</li>
+          <li>(E/A-Geräte bleiben hier unberücksichtigt)</li>
+        </ul>
+
+        <div class="callout callout--merke">
+          <div class="cico">🔑</div>
+          <div class="callout__body">
+            <p><strong>Schlüsselerkenntnis:</strong> Sichert man den Hauptspeicher-Zustand
+            und die Inhalte <strong>aller Register</strong> irgendwo ab, so kann man eine
+            Berechnung <strong>unterbrechen</strong> und später an <strong>genau
+            derselben Stelle</strong> wieder fortsetzen.</p>
+            <p>Genau das ist die Grundlage für <strong>Kontextwechsel</strong> zwischen
+            Prozessen (Kap.&nbsp;3) und für Multitasking!</p>
+          </div>
+        </div>
+
+        <h3>Interrupts (Unterbrechungen)</h3>
+        <p>
+          Ein <strong>Interrupt</strong> ist ein Signal, das die normale Abarbeitung
+          unterbricht. Bildlich: E/A-Geräte „strecken die Finger“, wenn ein externes
+          Ereignis behandelt werden muss. Die CPU sichert ihren Zustand, springt in
+          eine <strong>Interrupt-Service-Routine (ISR)</strong> und kehrt danach zurück.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 700 250" role="img" aria-label="Ablauf einer Interrupt-Behandlung">
+            <rect class="sk-box" x="30"  y="90" width="150" height="60" rx="10"/>
+            <text class="sk-sub" x="105" y="118" text-anchor="middle">Programm läuft</text>
+            <text class="sk-faint" x="105" y="136" text-anchor="middle">(normaler Befehlszyklus)</text>
+
+            <rect class="sk-accent" x="275" y="90" width="150" height="60" rx="10"/>
+            <text class="sk-label" x="350" y="115" text-anchor="middle">Zustand sichern</text>
+            <text class="sk-faint" x="350" y="134" text-anchor="middle">Register + PC</text>
+
+            <rect class="sk-box" x="520" y="90" width="150" height="60" rx="10"/>
+            <text class="sk-sub" x="595" y="115" text-anchor="middle">ISR ausführen</text>
+            <text class="sk-faint" x="595" y="134" text-anchor="middle">Ereignis behandeln</text>
+
+            <path class="sk-arrow" d="M180 120 L273 120" marker-end="url(#ah3)"/>
+            <text class="sk-faint" x="226" y="108" text-anchor="middle">⚡ Interrupt</text>
+            <path class="sk-arrow" d="M425 120 L518 120" marker-end="url(#ah3)"/>
+            <!-- Rücksprung -->
+            <path class="sk-arrow" d="M595 150 C595 210, 105 210, 105 152" marker-end="url(#ah3)"/>
+            <text class="sk-faint" x="350" y="205" text-anchor="middle">Zustand wiederherstellen → weiter an alter Stelle</text>
+            <defs>
+              <marker id="ah3" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#22c1a4"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>Interrupt-Behandlung: unterbrechen, Zustand sichern, ISR ausführen, Zustand wiederherstellen.</figcaption>
+        </figure>
+
+        <p>Es gibt verschiedene <strong>Arten von Interrupts</strong>:</p>
+        <ul>
+          <li><strong>Hardware-Interrupts</strong> – von E/A-Geräten (Tastatur, Platte, Netzwerk …)</li>
+          <li><strong>Software-Interrupts</strong> – vom Programm ausgelöst, z.&nbsp;B. bei <em>Systemaufrufen</em></li>
+          <li><strong>Timer-Interrupts</strong> – von einer Uhr in festen Abständen (unverzichtbar fürs Scheduling!)</li>
+        </ul>
+
+        <!-- Fragen Modul 3 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Wodurch wird der Rechenzustand (vereinfacht) vollständig beschrieben?</summary>
+            <div class="answer">Durch den <strong>Inhalt des Hauptspeichers</strong> und
+              den <strong>Inhalt aller Register</strong> (inkl. Programmzähler und PSW).</div>
+          </details>
+          <details class="q">
+            <summary>2. Warum ist das Sichern des Rechenzustands so wichtig?</summary>
+            <div class="answer">Weil man eine Berechnung dadurch <strong>unterbrechen</strong>
+              und später <strong>an genau derselben Stelle fortsetzen</strong> kann.
+              Das ist die Grundlage für <strong>Kontextwechsel</strong> und Multitasking.</div>
+          </details>
+          <details class="q">
+            <summary>3. Was ist ein Interrupt und was passiert dabei?</summary>
+            <div class="answer">Ein Signal, das die normale Abarbeitung unterbricht. Die
+              CPU <strong>sichert ihren Zustand</strong>, führt eine
+              <strong>Interrupt-Service-Routine</strong> aus und stellt danach den
+              Zustand wieder her.</div>
+          </details>
+          <details class="q">
+            <summary>4. Nenne drei Arten von Interrupts.</summary>
+            <div class="answer"><strong>Hardware-Interrupts</strong> (E/A-Geräte),
+              <strong>Software-Interrupts</strong> (z.&nbsp;B. Systemaufrufe) und
+              <strong>Timer-Interrupts</strong> (Uhr, wichtig fürs Scheduling).</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 4 -->
+      <section class="module" id="modul-4">
+        <div class="module__head">
+          <div class="module__num">4</div>
+          <h2>Die Speicherhierarchie</h2>
+        </div>
+
+        <p class="lead">
+          Es gibt keinen Speicher, der gleichzeitig <em>riesig</em>, <em>blitzschnell</em>
+          und <em>billig</em> ist. Deshalb kombiniert man mehrere Speicherarten zu einer
+          <strong>Hierarchie</strong>: oben schnell &amp; klein, unten langsam &amp; groß.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 420" role="img" aria-label="Speicherhierarchie als Pyramide">
+            <!-- Bänder (von oben nach unten) -->
+            <polygon class="sk-accent" points="360,30 316,100 404,100"/>
+            <polygon class="sk-box" points="316,100 404,100 448,170 272,170"/>
+            <polygon class="sk-accent" points="272,170 448,170 492,240 228,240"/>
+            <polygon class="sk-box" points="228,240 492,240 536,310 184,310"/>
+            <polygon class="sk-box" points="184,310 536,310 580,380 140,380"/>
+
+            <!-- Labels in Bändern -->
+            <text class="sk-sub" x="360" y="90"  text-anchor="middle">CPU-Register</text>
+            <text class="sk-label" x="360" y="140" text-anchor="middle">CPU-Cache</text>
+            <text class="sk-label" x="360" y="210" text-anchor="middle">Hauptspeicher</text>
+            <text class="sk-label" x="360" y="280" text-anchor="middle">Festplatte / SSD</text>
+            <text class="sk-sub" x="360" y="350" text-anchor="middle">CD, Band, …</text>
+
+            <!-- Zugriffszeiten links -->
+            <text class="sk-faint" x="150" y="20" text-anchor="start">Zugriffszeit</text>
+            <text class="sk-faint" x="150" y="92"  text-anchor="start">&lt; 1 ns</text>
+            <text class="sk-faint" x="150" y="140" text-anchor="start">≈ 5 ns</text>
+            <text class="sk-faint" x="150" y="210" text-anchor="start">≈ 50 ns</text>
+            <text class="sk-faint" x="150" y="280" text-anchor="start">0,2–10 ms</text>
+            <text class="sk-faint" x="150" y="350" text-anchor="start">10–100 s</text>
+
+            <!-- Kapazität rechts -->
+            <text class="sk-faint" x="600" y="20" text-anchor="start">Kapazität</text>
+            <text class="sk-faint" x="600" y="92"  text-anchor="start">&lt; 1 KB</text>
+            <text class="sk-faint" x="600" y="140" text-anchor="start">≈ 4 MB</text>
+            <text class="sk-faint" x="600" y="210" text-anchor="start">1–64 GB</text>
+            <text class="sk-faint" x="600" y="280" text-anchor="start">0,1–1 TB</text>
+            <text class="sk-faint" x="600" y="350" text-anchor="start">viele TB</text>
+
+            <!-- flüchtig / persistent Trennlinie -->
+            <line x1="120" y1="240" x2="600" y2="240" stroke="#eb5757" stroke-width="1.5" stroke-dasharray="6 5"/>
+            <text x="600" y="232" class="sk-faint" fill="#eb5757" text-anchor="start">▲ flüchtig</text>
+            <text x="600" y="256" class="sk-faint" fill="#eb5757" text-anchor="start">▼ persistent</text>
+          </svg>
+          <figcaption>Speicherhierarchie: von den CPU-Registern (schnell, winzig) bis zum Bandlaufwerk (langsam, riesig).</figcaption>
+        </figure>
+
+        <div class="callout callout--merke">
+          <div class="cico">📌</div>
+          <div class="callout__body">
+            <p><strong>Zwei Faustregeln:</strong></p>
+            <p>1) <strong>Je weiter oben, desto schneller, teurer und kleiner.</strong>
+            Von Register zu Band steigt die Zugriffszeit um viele Größenordnungen
+            (Nanosekunden → Sekunden).</p>
+            <p>2) <strong>Flüchtig vs. persistent:</strong> Alles oberhalb der roten Linie
+            (Register, Cache, Hauptspeicher = „Primärspeicher“) verliert bei Stromausfall
+            seinen Inhalt. Festplatte/SSD („Sekundärspeicher“) und Band („Tertiärspeicher“)
+            bleiben erhalten.</p>
+          </div>
+        </div>
+
+        <!-- Fragen Modul 4 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Warum baut man überhaupt eine Speicherhierarchie?</summary>
+            <div class="answer">Weil kein Speicher gleichzeitig schnell, groß und billig
+              ist. Die Hierarchie kombiniert die Vorteile: schneller kleiner Speicher
+              oben, großer langsamer Speicher unten.</div>
+          </details>
+          <details class="q">
+            <summary>2. Ordne von schnell nach langsam: Hauptspeicher, Register, Festplatte, Cache.</summary>
+            <div class="answer"><strong>Register</strong> (&lt;1&nbsp;ns) →
+              <strong>Cache</strong> (≈5&nbsp;ns) → <strong>Hauptspeicher</strong> (≈50&nbsp;ns)
+              → <strong>Festplatte/SSD</strong> (ms-Bereich).</div>
+          </details>
+          <details class="q">
+            <summary>3. Was bedeutet „flüchtig“ vs. „persistent“?</summary>
+            <div class="answer"><strong>Flüchtig:</strong> Inhalt geht bei Stromausfall
+              verloren (Register, Cache, Hauptspeicher = Primärspeicher).
+              <strong>Persistent:</strong> Inhalt bleibt erhalten (Festplatte/SSD =
+              Sekundär-, Band/CD = Tertiärspeicher).</div>
+          </details>
+          <details class="q">
+            <summary>4. Was versteht man unter Primär-, Sekundär- und Tertiärspeicher?</summary>
+            <div class="answer"><strong>Primär:</strong> Register/Cache/Hauptspeicher
+              (flüchtig, direkt von der CPU nutzbar). <strong>Sekundär:</strong>
+              Festplatte/SSD (persistent). <strong>Tertiär:</strong> Band/CD (Archiv,
+              sehr langsam, sehr groß).</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 5 -->
+      <section class="module" id="modul-5">
+        <div class="module__head">
+          <div class="module__num">5</div>
+          <h2>Vom Programm zur Maschine</h2>
+        </div>
+
+        <p class="lead">
+          Ein Programm schreibst du in einer <strong>Hochsprache</strong> (C, Java …).
+          Die CPU versteht aber nur <strong>Maschinencode</strong>. Mehrere
+          Dienstprogramme überbrücken diese Lücke.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 660 380" role="img" aria-label="Toolchain vom Quellcode zum Hauptspeicher">
+            <rect class="sk-box" x="230" y="16" width="200" height="52" rx="9"/>
+            <text class="sk-label" x="330" y="47" text-anchor="middle">Quellcode</text>
+            <text class="sk-faint" x="470" y="47" text-anchor="start">↤ Editor</text>
+
+            <rect class="sk-box" x="230" y="104" width="200" height="52" rx="9"/>
+            <text class="sk-label" x="330" y="135" text-anchor="middle">Maschinencode</text>
+
+            <rect class="sk-box" x="230" y="192" width="200" height="52" rx="9"/>
+            <text class="sk-label" x="330" y="223" text-anchor="middle">Ausführbares Programm</text>
+
+            <rect class="sk-accent" x="230" y="300" width="200" height="52" rx="9"/>
+            <text class="sk-label" x="330" y="331" text-anchor="middle">Hauptspeicher</text>
+
+            <!-- Bibliotheken -->
+            <rect class="sk-box" x="40" y="192" width="120" height="52" rx="9"/>
+            <text class="sk-sub" x="100" y="223" text-anchor="middle">Bibliotheken</text>
+            <path class="sk-line" d="M160 218 L228 218"/>
+
+            <!-- Pfeile + Stufen -->
+            <path class="sk-arrow" d="M330 68 L330 102" marker-end="url(#ah4)"/>
+            <text class="sk-faint" x="345" y="90" text-anchor="start">Compiler</text>
+            <path class="sk-arrow" d="M330 156 L330 190" marker-end="url(#ah4)"/>
+            <text class="sk-faint" x="345" y="178" text-anchor="start">Linker</text>
+            <path class="sk-arrow" d="M330 244 L330 298" marker-end="url(#ah4)"/>
+            <text class="sk-faint" x="345" y="276" text-anchor="start">Loader</text>
+            <defs>
+              <marker id="ah4" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#22c1a4"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>Werkzeugkette: Compiler → Linker (+ Bibliotheken) → Loader bringt das Programm in den Hauptspeicher.</figcaption>
+        </figure>
+
+        <h3>Die Rolle von Compiler und Linker</h3>
+        <p>Der <strong>Compiler</strong> …</p>
+        <ul>
+          <li>bildet die Hochsprache auf Maschinencode ab (z.&nbsp;B. <em>for</em>-Schleife → Sprünge)</li>
+          <li>definiert für jedes Programmobjekt einen Bereich im Hauptspeicher</li>
+          <li>optimiert die Anzahl der Befehle und die <strong>Registerausnutzung</strong> (möglichst wenige Speicherzugriffe)</li>
+          <li>fügt <strong>Laufzeitprüfungen</strong> ein (z.&nbsp;B. Array-Grenzen)</li>
+          <li>fügt Aufrufe an Bibliotheksfunktionen und <strong>Systemaufrufe</strong> ein</li>
+        </ul>
+        <p>Der <strong>Linker</strong> fügt „ergänzende“ Programmteile hinzu (den
+          ausführbaren Code der Bibliotheksfunktionen) – entweder <strong>statisch</strong>
+          (fest ins Programm eingebaut) oder <strong>dynamisch</strong> (erst zur Laufzeit
+          geladen). Der <strong>Loader</strong> bringt das fertige Programm schließlich in
+          den Hauptspeicher.</p>
+
+        <!-- Fragen Modul 5 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Nenne die Werkzeugkette vom Quellcode bis in den Hauptspeicher.</summary>
+            <div class="answer">Quellcode → <strong>Compiler</strong> → Maschinencode →
+              <strong>Linker</strong> (+ Bibliotheken) → ausführbares Programm →
+              <strong>Loader</strong> → Hauptspeicher.</div>
+          </details>
+          <details class="q">
+            <summary>2. Nenne drei Aufgaben des Compilers.</summary>
+            <div class="answer">Z.&nbsp;B.: Hochsprache auf Maschinencode abbilden;
+              Speicherbereiche für Objekte definieren; Befehle/Register optimieren;
+              Laufzeitprüfungen einfügen; Bibliotheks-/Systemaufrufe einfügen.</div>
+          </details>
+          <details class="q">
+            <summary>3. Was ist der Unterschied zwischen statischem und dynamischem Linken?</summary>
+            <div class="answer"><strong>Statisch:</strong> Der Bibliothekscode wird fest
+              in das ausführbare Programm eingebaut. <strong>Dynamisch:</strong> Der
+              Bibliothekscode wird erst zur <strong>Laufzeit</strong> geladen (mehrere
+              Programme können ihn teilen).</div>
+          </details>
+          <details class="q">
+            <summary>4. Was macht der Loader?</summary>
+            <div class="answer">Er lädt das fertige ausführbare Programm in den
+              <strong>Hauptspeicher</strong>, damit die CPU es ausführen kann.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 6 -->
+      <section class="module" id="modul-6">
+        <div class="module__head">
+          <div class="module__num">6</div>
+          <h2>Übungsaufgaben (echte Übungsfragen)</h2>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">📝</div>
+          <div class="callout__body">
+            <p>„Grundlagen“ kommt in den <strong>echten Klausuren nicht als eigene Aufgabe</strong>
+            vor – dafür aber in den <strong>offiziellen Übungsfragen (SS 2014)</strong>. Genau
+            diese Aufgaben stehen hier – mit vollständigem Lösungsweg. Sie decken
+            <strong>flüchtig/persistent, Sekundärspeicher, relative Adressierung</strong> und
+            eine <strong>Cache-Rechenaufgabe</strong> ab.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">★</span><h3>Übungsfragen SS 2014</h3><span class="count">7 Aufgaben</span>
+          </div>
+
+          <details class="q">
+            <summary>1. Erläutern Sie den Unterschied zwischen flüchtigem und persistentem Speicher. Zu welchem der beiden zählen die Registerspeicher eines Prozessors?</summary>
+            <div class="answer">
+              <strong>Flüchtig (volatil):</strong> Der Inhalt geht bei Stromausfall verloren
+              (z.&nbsp;B. Register, Cache, Hauptspeicher). <strong>Persistent (nicht-flüchtig):</strong>
+              Der Inhalt bleibt auch ohne Strom erhalten (z.&nbsp;B. Festplatte, SSD, Band).
+              Die <strong>Registerspeicher</strong> eines Prozessors sind <strong>flüchtig</strong>.
+              <span class="q-src">Quelle: Übungsfragen 2 (SS14), Aufgabe 2a</span></div>
+          </details>
+
+          <details class="q">
+            <summary>2. Welche Speichermedien werden in der Speicherhierarchie als „Sekundärspeicher“ bezeichnet? Welche zwei Rollen erfüllt er?</summary>
+            <div class="answer">
+              <strong>Sekundärspeicher</strong> = die persistenten Massenspeicher, v.&nbsp;a.
+              <strong>Festplatte / SSD</strong> (nicht die flüchtigen Primärspeicher Register/Cache/RAM).
+              Seine zwei Rollen:
+              <ul>
+                <li><strong>Dauerhafte Speicherung</strong> von Daten und Programmen (Dateisystem).</li>
+                <li><strong>Erweiterung des Hauptspeichers</strong> durch virtuellen Speicher –
+                    ausgelagerte Seiten landen in einer <strong>Auslagerungsdatei</strong> (Swap).</li>
+              </ul>
+              <span class="q-src">Quelle: Übungsfragen 2 (SS14), Aufgabe 2b</span></div>
+          </details>
+
+          <details class="q">
+            <summary>3. Welche Komponenten eines Rechnersystems realisieren die Speicherverwaltung?</summary>
+            <div class="answer">
+              Ein Zusammenspiel aus <strong>Software und Hardware</strong>:
+              <ul>
+                <li>das <strong>Betriebssystem</strong> (Speicherverwaltung als BS-Aufgabe: Seitentabellen, Zuteilung), und</li>
+                <li>die <strong>Hardware-Unterstützung in der CPU</strong>, insbesondere die
+                    <strong>MMU (Memory Management Unit)</strong>, die virtuelle in physikalische
+                    Adressen umsetzt.</li>
+              </ul>
+              <span class="q-src">Quelle: Übungsfragen 2 (SS14), Aufgabe 2c</span></div>
+          </details>
+
+          <details class="q">
+            <summary>4. Was versteht man unter „relativer Adressierung“? Nennen Sie je einen Vor- und Nachteil.</summary>
+            <div class="answer">
+              Bei <strong>relativer Adressierung</strong> werden Adressen nicht absolut, sondern
+              <strong>relativ zu einer Basisadresse</strong> (z.&nbsp;B. Programmanfang / Basisregister)
+              angegeben – die effektive Adresse ist <em>Basis&nbsp;+&nbsp;Offset</em>.
+              <ul>
+                <li><strong>Vorteil:</strong> Das Programm ist <strong>verschieblich (relokierbar)</strong> –
+                    es kann an eine beliebige Stelle im Speicher geladen werden, ohne die Adressen
+                    im Code zu ändern. Ideal für Multiprogramming.</li>
+                <li><strong>Nachteil:</strong> <strong>Zusätzlicher Aufwand</strong> bei jedem Zugriff
+                    (Basis + Offset muss addiert werden) → etwas langsamer; benötigt
+                    Hardware-Unterstützung.</li>
+              </ul>
+              <span class="q-src">Quelle: Übungsfragen 2 (SS14), Aufgabe 2d</span></div>
+          </details>
+
+          <details class="q">
+            <summary>5. Cache-Aufgabe: Ein Cache lädt Blöcke à 64 Byte. Ein Byte-Array der Länge 200 (anfangs nur im RAM) wird sequenziell Byte für Byte gelesen. Wie hoch ist die Trefferrate der 200 Zugriffe? (Ein geladener Block beginnt genau bei der zugegriffenen Adresse.)</summary>
+            <div class="answer">
+              Jeder Cache-<em>Miss</em> lädt einen 64-Byte-Block, der die nächsten 63 Zugriffe
+              zu <em>Treffern</em> macht:
+              <ul>
+                <li>Zugriff 0 → <strong>Miss</strong>, lädt Byte 0–63 &nbsp;(Zugriffe 1–63 = Treffer)</li>
+                <li>Zugriff 64 → <strong>Miss</strong>, lädt Byte 64–127</li>
+                <li>Zugriff 128 → <strong>Miss</strong>, lädt Byte 128–191</li>
+                <li>Zugriff 192 → <strong>Miss</strong>, lädt Byte 192–255 &nbsp;(Zugriffe 193–199 = Treffer)</li>
+              </ul>
+              Also <strong>4 Misses</strong> und <strong>196 Treffer</strong> bei 200 Zugriffen.
+              <br><strong>Trefferrate = 196 / 200 = 0,98 = 98&nbsp;%.</strong>
+              <span class="q-src">Quelle: Übungsfragen 2 (SS14), Aufgabe 3a</span></div>
+          </details>
+
+          <details class="q">
+            <summary>6. Cache-Aufgabe (Forts.): Cache-Zugriff = 5 ns, Hauptspeicher-Zugriff = 60 ns (Miss-Zeit darin enthalten). Wie hoch ist die Gesamt- und die mittlere Zugriffszeit der 200 Zugriffe?</summary>
+            <div class="answer">
+              Ein <strong>Treffer</strong> kostet 5&nbsp;ns, ein <strong>Miss</strong> 60&nbsp;ns.
+              <ul>
+                <li>Treffer: 196 × 5&nbsp;ns = <strong>980&nbsp;ns</strong></li>
+                <li>Misses: 4 × 60&nbsp;ns = <strong>240&nbsp;ns</strong></li>
+                <li><strong>Gesamtzugriffszeit = 980 + 240 = 1220&nbsp;ns</strong></li>
+              </ul>
+              <strong>Mittlere Zugriffszeit = 1220&nbsp;ns / 200 = 6,1&nbsp;ns.</strong>
+              (Trotz teurer Misses nahe an den 5&nbsp;ns des Caches – dank hoher Trefferrate.)
+              <span class="q-src">Quelle: Übungsfragen 2 (SS14), Aufgabe 3b</span></div>
+          </details>
+
+          <details class="q">
+            <summary>7. Welche Eigenschaft realer Anwendungen macht Caches lohnenswert? Erläutern Sie die zwei Aspekte dieses Prinzips.</summary>
+            <div class="answer">
+              Das <strong>Lokalitätsprinzip</strong> – Speicherzugriffe sind nicht zufällig
+              verteilt, sondern „ballen sich“:
+              <ul>
+                <li><strong>Räumliche Lokalität:</strong> Nach einem Zugriff werden bald
+                    <strong>benachbarte</strong> Adressen zugegriffen (z.&nbsp;B. Array-Durchlauf,
+                    Befehle liegen hintereinander). → Deshalb lohnt es, gleich einen ganzen
+                    <em>Block</em> in den Cache zu laden.</li>
+                <li><strong>Zeitliche Lokalität:</strong> Eine gerade benutzte Adresse wird
+                    <strong>bald wieder</strong> gebraucht (z.&nbsp;B. Schleifenvariablen, Zähler).
+                    → Deshalb lohnt es, sie im Cache zu <em>behalten</em>.</li>
+              </ul>
+              <span class="q-src">Quelle: Übungsfragen 2 (SS14), Aufgabe 3c</span></div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Kapitel-Navigation -->
+      <nav class="chapter-nav">
+        <a class="prev" href="kapitel-01.html">
+          <span class="dir">← Vorheriges</span>
+          <span class="ttl">1 · Einführung</span>
+        </a>
+        <a class="next" href="kapitel-03.html">
+          <span class="dir">Nächstes →</span>
+          <span class="ttl">3 · Prozesse</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="js/chapter.js"></script>
+</body>
+</html>

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kapitel 3 · Prozesse · Betriebssysteme</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/chapter.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>" />
+</head>
+<body class="chapter" style="--chapter-accent:#f2994a;">
+  <div class="progress"></div>
+
+  <!-- ============================================================ TOPBAR -->
+  <div class="topbar">
+    <div class="topbar__inner">
+      <a class="home" href="index.html">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg>
+        Hub
+      </a>
+      <span class="crumb">Kapitel 03 · <b>Prozesse</b></span>
+      <span class="spacer"></span>
+      <a class="pdf-link" href="Themen/OS_3_Prozesse.pdf" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Skript-PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- ============================================================ LAYOUT -->
+  <div class="chapter-layout">
+
+    <!-- Inhaltsverzeichnis -->
+    <nav class="toc">
+      <div class="toc-title">Module</div>
+      <ol>
+        <li><a href="#modul-1"><span class="mod-num">1</span>Was ist ein Prozess?</a></li>
+        <li><a href="#modul-2"><span class="mod-num">2</span>Der Prozesskontrollblock</a></li>
+        <li><a href="#modul-3"><span class="mod-num">3</span>Prozesszustände</a></li>
+        <li><a href="#modul-4"><span class="mod-num">4</span>Prozesswechsel (Kontextwechsel)</a></li>
+        <li><a href="#modul-5"><span class="mod-num">5</span>Erzeugung &amp; Terminierung</a></li>
+        <li><a href="#modul-6"><span class="mod-num">6</span>Altklausurfragen</a></li>
+      </ol>
+    </nav>
+
+    <!-- Hauptinhalt -->
+    <main class="content">
+
+      <!-- Kapitel-Kopf -->
+      <header class="chapter-hero">
+        <div class="kicker"><span class="ico">⚙️</span> Kapitel 03</div>
+        <h1>Prozesse</h1>
+        <p class="intro">
+          Der <strong>Prozess</strong> ist das <em>zentrale Konzept</em> jedes
+          Betriebssystems. In diesem Kapitel klären wir, was ein Prozess ist, wie das
+          BS seinen Zustand verwaltet (Prozesskontrollblock), welche
+          <strong>Zustände</strong> ein Prozess durchläuft und – die wichtigste
+          Klausuraufgabe – wie ein <strong>Kontextwechsel</strong> abläuft. Das baut
+          direkt auf dem „Rechenzustand“ aus Kapitel&nbsp;2 auf.
+        </p>
+
+        <div class="goals">
+          <h4>Nach diesem Kapitel kannst du …</h4>
+          <ul>
+            <li>einen Prozess definieren und vom Programm abgrenzen</li>
+            <li>erklären, was in einem Prozesskontrollblock (PCB) steht und wo er liegt</li>
+            <li>das Prozesszustandsmodell (bereit / aktiv / blockiert) zeichnen und erläutern</li>
+            <li>den Ablauf eines Kontextwechsels Schritt für Schritt beschreiben</li>
+            <li>Prozesserzeugung (fork), -hierarchien und -terminierung einordnen</li>
+          </ul>
+        </div>
+      </header>
+
+      <!-- =================================================== MODUL 1 -->
+      <section class="module" id="modul-1">
+        <div class="module__head">
+          <div class="module__num">1</div>
+          <h2>Was ist ein Prozess?</h2>
+        </div>
+
+        <p class="lead">
+          Ein <strong>Prozess</strong> ist die <em>aktive Ablaufinstanz</em> eines
+          Rechenvorgangs – kurz: ein <strong>„Programm in Ausführung“</strong>.
+        </p>
+
+        <div class="callout callout--merke">
+          <div class="cico">📖</div>
+          <div class="callout__body">
+            <p><strong>Programm ≠ Prozess.</strong> Ein Programm ist der <em>statische</em>
+            Code auf der Platte. Ein Prozess ist das <em>laufende</em> Programm samt allem,
+            was zur Ausführung dazugehört. Dasselbe Programm kann mehrfach gleichzeitig als
+            mehrere Prozesse laufen.</p>
+          </div>
+        </div>
+
+        <p>Zu einem Prozess gehören:</p>
+        <ul>
+          <li>der <strong>Programmcode</strong> (in Maschinensprache)</li>
+          <li>die <strong>Speicherbereiche</strong> des Programms (Daten, Stack, Heap)</li>
+          <li>weitere <strong>Betriebsmittel</strong> (offene Dateien, E/A-Geräte …)</li>
+        </ul>
+
+        <p>
+          Der <strong>Zustand</strong> eines Prozesses lässt sich beschreiben durch:
+          <em>welcher Befehl als Nächstes dran ist</em> (Programmzähler), <em>was in
+          seinen Speicherelementen und Registern steht</em> und <em>der Zustand seiner
+          E/A-Geräte</em>. Genau dieser Zustand lässt sich – wie in Kapitel&nbsp;2 gezeigt
+          – abspeichern und später wieder aktivieren.
+        </p>
+
+        <h3>Ein Prozessor, viele Prozesse</h3>
+        <p>
+          Auf einem Rechner sind zu jedem Zeitpunkt <strong>viele</strong> Prozesse
+          vorhanden. Auf einem Single-Core-Prozessor ist aber immer nur
+          <strong>einer aktiv</strong> (rechnend), alle anderen sind passiv („schlafen
+          im Regal“). Das BS ist für die <strong>Zuteilung des Prozessors</strong> an die
+          Prozesse verantwortlich.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 680 300" role="img" aria-label="Ein Prozessor bearbeitet einen aktiven Prozess, die anderen warten">
+            <rect class="sk-box" x="40" y="120" width="150" height="64" rx="10"/>
+            <text class="sk-label" x="115" y="150" text-anchor="middle">Prozessor</text>
+            <text class="sk-faint" x="115" y="170" text-anchor="middle">(Single-Core)</text>
+
+            <!-- Speicher mit Prozessen -->
+            <text class="sk-faint" x="470" y="28" text-anchor="middle">Hauptspeicher</text>
+            <rect x="360" y="40" width="220" height="46" rx="7" fill="#3a3f47" stroke="#2a3441"/>
+            <text class="sk-sub" x="470" y="68" text-anchor="middle">Prozess 1 · passiv (bereit)</text>
+
+            <rect x="360" y="96" width="220" height="46" rx="7" fill="color-mix(in srgb,#27ae60 30%,#1a2029)" stroke="#27ae60" stroke-width="1.5"/>
+            <text class="sk-label" x="470" y="124" text-anchor="middle">Prozess 2 · AKTIV</text>
+
+            <rect x="360" y="152" width="220" height="46" rx="7" fill="#3a3f47" stroke="#2a3441"/>
+            <text class="sk-sub" x="470" y="180" text-anchor="middle">Prozess 3 · passiv (blockiert)</text>
+
+            <rect x="360" y="208" width="220" height="46" rx="7" fill="#3a3f47" stroke="#2a3441"/>
+            <text class="sk-sub" x="470" y="236" text-anchor="middle">Prozess 4 · passiv (bereit)</text>
+
+            <!-- Pfeil CPU -> aktiver Prozess -->
+            <path class="sk-arrow" d="M190 150 C270 150, 280 119, 356 119" marker-end="url(#p-arr)" stroke="#27ae60"/>
+            <text class="sk-faint" x="250" y="112" text-anchor="middle" fill="#27ae60">rechnet gerade</text>
+            <defs>
+              <marker id="p-arr" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#27ae60"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>Nur ein Prozess ist aktiv (bekommt die CPU); die übrigen warten passiv im Speicher.</figcaption>
+        </figure>
+
+        <!-- Fragen Modul 1 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was ist der Unterschied zwischen einem Programm und einem Prozess?</summary>
+            <div class="answer">Ein <strong>Programm</strong> ist der statische Code (z.&nbsp;B.
+              auf der Platte). Ein <strong>Prozess</strong> ist ein Programm <strong>in
+              Ausführung</strong> – samt Code, Speicherbereichen, Registern und
+              Betriebsmitteln. Ein Programm kann mehrfach gleichzeitig als mehrere Prozesse laufen.</div>
+          </details>
+          <details class="q">
+            <summary>2. Was gehört alles zu einem Prozess?</summary>
+            <div class="answer">Der <strong>Programmcode</strong>, die
+              <strong>Speicherbereiche</strong> (Daten/Stack/Heap) und weitere
+              <strong>Betriebsmittel</strong> (offene Dateien, E/A-Geräte …).</div>
+          </details>
+          <details class="q">
+            <summary>3. Wie viele Prozesse sind auf einem Single-Core-Rechner gleichzeitig aktiv?</summary>
+            <div class="answer">Genau <strong>einer</strong>. Alle anderen sind passiv
+              (bereit oder blockiert). Das BS teilt die CPU reihum zu.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 2 -->
+      <section class="module" id="modul-2">
+        <div class="module__head">
+          <div class="module__num">2</div>
+          <h2>Der Prozesskontrollblock (PCB)</h2>
+        </div>
+
+        <p class="lead">
+          Damit das BS einen Prozess verwalten (und später fortsetzen) kann, speichert es
+          alle wesentlichen Informationen über ihn in einer Datenstruktur: dem
+          <strong>Prozesskontrollblock</strong> (PCB).
+        </p>
+
+        <p>Ein PCB enthält u.&nbsp;a.:</p>
+        <ul>
+          <li><strong>Prozess-ID</strong> – eindeutiger Identifikator („key“)</li>
+          <li><strong>Registerinhalte</strong> – inkl. PSW und <strong>Kellerzeiger</strong> (Stack Pointer)</li>
+          <li><strong>letzter Programmzähler</strong> – wo soll fortgesetzt werden?</li>
+          <li><strong>Zeiger auf Code und Daten</strong></li>
+          <li><strong>Priorität</strong> (fürs Scheduling, Kap.&nbsp;4)</li>
+          <li>ggf. <strong>Referenz auf den Vaterprozess</strong></li>
+          <li><strong>Statistik-/Accounting-Daten</strong> (CPU-Zeit, Speicherverbrauch …)</li>
+          <li>Attribute der <strong>Dateiverwaltung</strong> (Rechte, offene Dateien …)</li>
+        </ul>
+
+        <div class="callout callout--note">
+          <div class="cico">🔒</div>
+          <div class="callout__body">
+            <p>Prozesskontrollblöcke liegen im <strong>geschützten Datenbereich des
+            Betriebssystems</strong> – kein normaler Prozess darf sie manipulieren. Genau
+            im PCB wird beim Kontextwechsel der Zustand gesichert (Modul&nbsp;4).</p>
+          </div>
+        </div>
+
+        <!-- Fragen Modul 2 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was ist ein Prozesskontrollblock und wozu dient er?</summary>
+            <div class="answer">Eine Datenstruktur, in der das BS <strong>alle wesentlichen
+              Attribute eines Prozesses</strong> speichert. Sie erlaubt es, den Prozess zu
+              verwalten und nach einer Unterbrechung exakt fortzusetzen.</div>
+          </details>
+          <details class="q">
+            <summary>2. Nenne mindestens fünf Inhalte eines PCB.</summary>
+            <div class="answer">Prozess-ID, Registerinhalte (inkl. PSW &amp; Kellerzeiger),
+              letzter Programmzähler, Zeiger auf Code/Daten, Priorität, Vaterprozess-Referenz,
+              Accounting-Daten, Dateiverwaltungs-Attribute.</div>
+          </details>
+          <details class="q">
+            <summary>3. Wo werden PCBs abgelegt und warum dort?</summary>
+            <div class="answer">Im <strong>geschützten Datenbereich des Betriebssystems</strong>,
+              damit kein Benutzerprozess sie unbefugt lesen oder verändern kann (Schutz &amp;
+              Sicherheit).</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 3 -->
+      <section class="module" id="modul-3">
+        <div class="module__head">
+          <div class="module__num">3</div>
+          <h2>Prozesszustände</h2>
+        </div>
+
+        <p class="lead">
+          Jeder Prozess wechselt im Laufe seines Lebens zwischen <strong>drei
+          Hauptzuständen</strong>. Man kann sich das wie eine <strong>Ampelschaltung</strong>
+          vorstellen.
+        </p>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Zustand</th><th>Bedeutung</th></tr></thead>
+            <tbody>
+              <tr><td>Aktiv (rechnend)</td><td>Prozess ist der CPU zugeordnet, seine Befehle werden gerade abgearbeitet.</td></tr>
+              <tr><td>Blockiert</td><td>Prozess <strong>wartet auf ein externes Ereignis</strong> (z.&nbsp;B. Ende einer Festplatten-/Netzwerk-Operation) und kann ohne dieses nicht weiter.</td></tr>
+              <tr><td>Bereit</td><td>Prozess <strong>könnte rechnen</strong>, wartet aber nur darauf, dass die CPU frei wird.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 380" role="img" aria-label="Prozesszustandsdiagramm mit Neu, Bereit, Aktiv, Blockiert, Terminiert">
+            <!-- Übergänge zuerst (damit Ellipsen darüber liegen) -->
+            <!-- Neu -> Bereit -->
+            <path class="sk-arrow" d="M120 150 L206 150" marker-end="url(#o-arr)"/>
+            <!-- Bereit -> Aktiv (oben) -->
+            <path class="sk-arrow" d="M330 135 L420 135" marker-end="url(#o-arr)"/>
+            <text class="sk-faint" x="375" y="122" text-anchor="middle">Zuteilung</text>
+            <!-- Aktiv -> Bereit (unten) -->
+            <path class="sk-arrow" d="M420 168 L330 168" marker-end="url(#o-arr)" stroke="#eb5757"/>
+            <text class="sk-faint" x="375" y="188" text-anchor="middle" fill="#eb5757">Verdrängung</text>
+            <!-- Aktiv -> Blockiert -->
+            <path class="sk-arrow" d="M470 182 L410 288" marker-end="url(#o-arr)"/>
+            <text class="sk-faint" x="505" y="245" text-anchor="start">wartet auf</text>
+            <text class="sk-faint" x="505" y="261" text-anchor="start">Ereignis (E/A)</text>
+            <!-- Blockiert -> Bereit -->
+            <path class="sk-arrow" d="M300 300 L268 182" marker-end="url(#o-arr)"/>
+            <text class="sk-faint" x="205" y="250" text-anchor="middle">Ereignis</text>
+            <text class="sk-faint" x="205" y="266" text-anchor="middle">eingetreten</text>
+            <!-- Aktiv -> Terminiert -->
+            <path class="sk-arrow" d="M560 150 L612 150" marker-end="url(#o-arr)"/>
+            <text class="sk-faint" x="586" y="138" text-anchor="middle">exit</text>
+
+            <!-- Ellipsen -->
+            <ellipse cx="72" cy="150" rx="48" ry="27" fill="#3a3f47" stroke="#2a3441"/>
+            <text class="sk-label" x="72" y="156" text-anchor="middle">Neu</text>
+
+            <ellipse cx="268" cy="150" rx="62" ry="30" fill="color-mix(in srgb,#f2994a 32%,#1a2029)" stroke="#f2994a" stroke-width="1.5"/>
+            <text class="sk-label" x="268" y="156" text-anchor="middle">Bereit</text>
+
+            <ellipse cx="490" cy="150" rx="62" ry="30" fill="color-mix(in srgb,#27ae60 32%,#1a2029)" stroke="#27ae60" stroke-width="1.5"/>
+            <text class="sk-label" x="490" y="156" text-anchor="middle">Aktiv</text>
+
+            <ellipse cx="662" cy="150" rx="50" ry="27" fill="#3a3f47" stroke="#2a3441"/>
+            <text class="sk-label" x="662" y="156" text-anchor="middle">Terminiert</text>
+
+            <ellipse cx="360" cy="315" rx="64" ry="30" fill="color-mix(in srgb,#eb5757 32%,#1a2029)" stroke="#eb5757" stroke-width="1.5"/>
+            <text class="sk-label" x="360" y="321" text-anchor="middle">Blockiert</text>
+
+            <defs>
+              <marker id="o-arr" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#c9d1d9"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>Prozesszustandsmodell. Kern sind Bereit ↔ Aktiv ↔ Blockiert; „Neu“ und „Terminiert“ ergänzen Erzeugung und Ende.</figcaption>
+        </figure>
+
+        <h3>Die wichtigen Übergänge</h3>
+        <ul>
+          <li><strong>Bereit → Aktiv (Zuteilung):</strong> Der Scheduler gibt dem Prozess die CPU.</li>
+          <li><strong>Aktiv → Blockiert:</strong> Der Prozess führt z.&nbsp;B. ein <em>receive</em>
+              aus oder wartet auf E/A – ohne das Ereignis kann er nicht weiter.</li>
+          <li><strong>Blockiert → Bereit:</strong> Das Ereignis ist eingetreten (Nachricht
+              da, E/A fertig) – der Prozess <em>könnte</em> wieder, wartet aber auf die CPU.</li>
+          <li><strong>Aktiv → Bereit (Verdrängung / Preemption):</strong> Der Prozess verliert
+              die CPU, <em>obwohl er weiterrechnen könnte</em> – z.&nbsp;B. weil seine Zeitscheibe
+              abgelaufen ist. Details in Kapitel&nbsp;4.</li>
+        </ul>
+
+        <div class="callout callout--note">
+          <div class="cico">💡</div>
+          <div class="callout__body">
+            <p><strong>Blockiert vs. Bereit – der Klassiker:</strong> Beide laufen nicht.
+            Aber <strong>blockiert</strong> = wartet auf ein <em>Ereignis</em> (kann noch
+            gar nicht weiter). <strong>Bereit</strong> = wartet nur auf die <em>CPU</em>
+            (könnte sofort loslegen).</p>
+          </div>
+        </div>
+
+        <!-- Fragen Modul 3 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Nenne die drei Hauptzustände eines Prozesses.</summary>
+            <div class="answer"><strong>Aktiv</strong> (rechnend), <strong>Bereit</strong>
+              (wartet auf CPU) und <strong>Blockiert</strong> (wartet auf ein Ereignis).</div>
+          </details>
+          <details class="q">
+            <summary>2. Worin unterscheiden sich „blockiert“ und „bereit“?</summary>
+            <div class="answer">Beide rechnen nicht. <strong>Blockiert:</strong> wartet auf ein
+              <strong>externes Ereignis</strong> (E/A, Nachricht) und kann ohne dieses nicht
+              weiter. <strong>Bereit:</strong> könnte sofort rechnen, wartet nur auf die
+              <strong>CPU</strong>.</div>
+          </details>
+          <details class="q">
+            <summary>3. Was ist „Verdrängung“ und welcher Zustandsübergang gehört dazu?</summary>
+            <div class="answer">Verdrängung (Preemption): Ein aktiver Prozess verliert die CPU,
+              <strong>obwohl er weiterrechnen könnte</strong> (z.&nbsp;B. Zeitscheibe abgelaufen).
+              Übergang <strong>Aktiv → Bereit</strong>.</div>
+          </details>
+          <details class="q">
+            <summary>4. Welche zwei zusätzlichen Zustände gibt es neben den drei Hauptzuständen?</summary>
+            <div class="answer"><strong>Neu</strong> (Prozess wird gerade erzeugt/etabliert) und
+              <strong>Terminiert</strong> (Prozess ist beendet, nicht-persistente
+              Zustandselemente werden gelöscht).</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 4 -->
+      <section class="module" id="modul-4">
+        <div class="module__head">
+          <div class="module__num">4</div>
+          <h2>Prozesswechsel (Kontextwechsel)</h2>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">⭐</div>
+          <div class="callout__body">
+            <p><strong>Klausur-Klassiker!</strong> Der Ablauf eines Kontextwechsels wurde
+            u.&nbsp;a. in <strong>SS 2008</strong> direkt gefragt. Diese 7 Schritte solltest
+            du auswendig erklären können.</p>
+          </div>
+        </div>
+
+        <p>
+          Ein <strong>Prozesswechsel</strong> (Kontextwechsel) übergibt die CPU von einem
+          Prozess an einen anderen. Zuständig ist ein spezielles Stück BS-Code, der
+          <strong>Dispatcher</strong>. Die zentrale Idee stammt aus Kapitel&nbsp;2: Man
+          <strong>sichert den kompletten Rechenzustand</strong> von P1 und
+          <strong>stellt den von P2 wieder her</strong>.
+        </p>
+
+        <h3>Die 7 Schritte</h3>
+        <ol>
+          <li>Prozess&nbsp;1 ist <strong>aktiv</strong>.</li>
+          <li><strong>Unterbrechung</strong> durchs BS („System-Interrupt“) – ab jetzt läuft
+              der <strong>Dispatcher</strong>.</li>
+          <li>Speichere den aktuellen <strong>Programmzähler</strong> von P1 in den Hauptspeicher (PCB).</li>
+          <li>Speichere alle <strong>Datenregister inkl. PSW</strong> von P1 in den Hauptspeicher.</li>
+          <li>Lese die <strong>Registerinhalte von P2</strong> aus dem Hauptspeicher in den Prozessor.</li>
+          <li>Lade den <strong>Programmzähler von P2</strong> in den Prozessor.</li>
+          <li>Der Prozessor <strong>führt P2 an der richtigen Stelle fort</strong> (der
+              BS-Code endet implizit).</li>
+        </ol>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 700 320" role="img" aria-label="Kontextwechsel: Zustand von P1 sichern, Zustand von P2 laden">
+            <!-- CPU -->
+            <rect class="sk-accent" x="270" y="20" width="160" height="70" rx="10"/>
+            <text class="sk-label" x="350" y="48" text-anchor="middle">Prozessor (CPU)</text>
+            <text class="sk-sub" x="350" y="70" text-anchor="middle">Register · PC · PSW</text>
+            <text class="sk-faint" x="350" y="108" text-anchor="middle">↑ Dispatcher steuert den Wechsel ↑</text>
+
+            <!-- Speicher unten -->
+            <text class="sk-faint" x="350" y="150" text-anchor="middle">Hauptspeicher (Prozesskontrollblöcke)</text>
+            <rect class="sk-box" x="90" y="165" width="200" height="120" rx="10"/>
+            <text class="sk-label" x="190" y="195" text-anchor="middle">PCB Prozess 1</text>
+            <text class="sk-sub" x="190" y="220" text-anchor="middle">Register, PC, PSW</text>
+            <text class="sk-sub" x="190" y="240" text-anchor="middle">werden hierher</text>
+            <text class="sk-sub" x="190" y="260" text-anchor="middle">gesichert</text>
+
+            <rect class="sk-box" x="410" y="165" width="200" height="120" rx="10"/>
+            <text class="sk-label" x="510" y="195" text-anchor="middle">PCB Prozess 2</text>
+            <text class="sk-sub" x="510" y="220" text-anchor="middle">Register, PC, PSW</text>
+            <text class="sk-sub" x="510" y="240" text-anchor="middle">werden von hier</text>
+            <text class="sk-sub" x="510" y="260" text-anchor="middle">geladen</text>
+
+            <!-- Pfeile -->
+            <path class="sk-arrow" d="M300 90 C240 120, 200 130, 190 160" marker-end="url(#o-arr2)" stroke="#eb5757"/>
+            <text class="sk-faint" x="150" y="130" text-anchor="middle" fill="#eb5757">① sichern (3–4)</text>
+            <path class="sk-arrow" d="M510 160 C520 130, 460 118, 400 90" marker-end="url(#o-arr2)" stroke="#27ae60"/>
+            <text class="sk-faint" x="560" y="130" text-anchor="middle" fill="#27ae60">② laden (5–6)</text>
+            <defs>
+              <marker id="o-arr2" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#c9d1d9"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>Kern des Kontextwechsels: Zustand von P1 in dessen PCB sichern, Zustand von P2 aus dessen PCB laden.</figcaption>
+        </figure>
+
+        <div class="callout callout--merke">
+          <div class="cico">🔑</div>
+          <div class="callout__body">
+            <p>Ein Kontextwechsel kostet Zeit (reine „Verwaltung“, kein Nutzrechnen) →
+            <strong>Overhead</strong>. Deshalb darf man nicht zu oft wechseln. Der
+            Dispatcher taucht im Zeitdiagramm <em>zwischen</em> je zwei Prozessen auf.</p>
+          </div>
+        </div>
+
+        <!-- Fragen Modul 4 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was ist der Dispatcher?</summary>
+            <div class="answer">Das Stück Betriebssystem-Code, das den eigentlichen
+              <strong>Prozesswechsel</strong> durchführt (Zustand sichern/laden und CPU
+              übergeben). Er wird nach einer Unterbrechung (System-Interrupt) aktiv.</div>
+          </details>
+          <details class="q">
+            <summary>2. Warum kann man einen Prozess überhaupt unterbrechen und später fortsetzen?</summary>
+            <div class="answer">Weil sein kompletter Zustand aus <strong>Registern (inkl. PC
+              und PSW) und Speicherinhalt</strong> besteht. Sichert man diese im PCB, kann der
+              Prozess exakt an derselben Stelle fortgesetzt werden (siehe Kapitel&nbsp;2,
+              „Rechenzustand“).</div>
+          </details>
+          <details class="q">
+            <summary>3. Warum sollte man nicht zu häufig zwischen Prozessen wechseln?</summary>
+            <div class="answer">Jeder Kontextwechsel kostet Zeit für das Sichern/Laden der
+              Register – das ist <strong>Overhead</strong> ohne Nutzrechnen. Zu häufige Wechsel
+              senken die effektive CPU-Auslastung.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 5 -->
+      <section class="module" id="modul-5">
+        <div class="module__head">
+          <div class="module__num">5</div>
+          <h2>Erzeugung &amp; Terminierung</h2>
+        </div>
+
+        <p class="lead">
+          Prozesse entstehen und vergehen. Hier klären wir, <em>wie</em> Prozesse erzeugt
+          werden, wie sie <strong>Hierarchien</strong> bilden und wie sie enden.
+        </p>
+
+        <h3>Prozesserzeugung</h3>
+        <ul>
+          <li><strong>Beim Systemstart:</strong> bestimmte Systemprozesse (Hintergrund­prozesse,
+              „<em>daemons</em>“) – z.&nbsp;B. Desktop-Prozess, Disk-I/O, Spool-Server.</li>
+          <li><strong>Interaktiv durch den Benutzer:</strong> oft gilt „1 Prozess = 1 Fenster“
+              (nicht immer); ein Klick = Kommunikation mit dem Prozess.</li>
+          <li><strong>Durch andere Prozesse:</strong> ein <strong>Vater/Eltern</strong>-Prozess
+              erzeugt einen <strong>Kind</strong>-Prozess. UNIX: <em>fork</em>, Windows:
+              <em>CreateProcess</em>. So entstehen <strong>Prozesshierarchien /
+              Prozessfamilien</strong>.</li>
+        </ul>
+
+        <div class="callout callout--note">
+          <div class="cico">✈️</div>
+          <div class="callout__body">
+            <p><strong>Beispiel Prozessfamilie (Flugsicherung ARTAS):</strong> Eine
+            <em>Pipeline</em> aus Prozessen (Producer-Consumer):
+            <strong>Input-Manager → Tracker → Server</strong>. Jeder Prozess erledigt eine
+            Teilaufgabe – das nennt man <strong>Prozess-Pipelining</strong>.</p>
+          </div>
+        </div>
+
+        <h3>Warum Prozess-Pipelining?</h3>
+        <ul>
+          <li><strong>Modularisierung</strong> („Divide &amp; Conquer“) – jeder Prozess eine Teilaufgabe</li>
+          <li><strong>Klare Schnittstellen</strong> → bessere Testbarkeit &amp; Fehlerabgrenzung</li>
+          <li><strong>Höhere Effizienz:</strong> während ein Prozess auf E/A wartet, „geben andere
+              den Ball weiter“ und rechnen</li>
+          <li><strong>Bessere Echtzeiteigenschaften:</strong> jeder Prozess kann eigene
+              Zeitbedingungen erfüllen</li>
+        </ul>
+        <p>
+          Dafür braucht es <strong>BS-Unterstützung</strong>: (1) Erzeugung mehrerer Prozesse,
+          (2) zeitgleiche Ausführung, (3) <strong>Kommunikation</strong> zwischen Prozessen
+          (→ Kapitel&nbsp;7).
+        </p>
+
+        <h3>Prozessterminierung</h3>
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Art</th><th>Beschreibung</th></tr></thead>
+            <tbody>
+              <tr><td>Regulär</td><td>Programm endet normal (UNIX <em>exit</em>, Windows <em>ExitProcess</em>); alle Betriebsmittel werden freigegeben – auch bei „kontrollierten Fehlern“, die das Programm selbst erkennt.</td></tr>
+              <tr><td>Fehler im Programm</td><td>z.&nbsp;B. DIV/ZERO, Float-Überlauf, zu großer Array-Index. Einfache Fehler fängt das Programm selbst ab (<em>Exception Handler</em>); schwere Fehler übernimmt das BS und terminiert den Prozess.</td></tr>
+              <tr><td>Von außen</td><td>Ein anderer Prozess (z.&nbsp;B. der Vater) terminiert ihn: UNIX <em>Kill</em>, Windows <em>TerminateProcess</em>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Fragen Modul 5 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Auf welche drei Arten können Prozesse erzeugt werden?</summary>
+            <div class="answer">Beim <strong>Systemstart</strong> (daemons), <strong>interaktiv
+              durch den Benutzer</strong> und <strong>durch andere Prozesse</strong>
+              (Vater erzeugt Kind, z.&nbsp;B. per <em>fork</em> / <em>CreateProcess</em>).</div>
+          </details>
+          <details class="q">
+            <summary>2. Wie heißen die Systemaufrufe zur Prozesserzeugung in UNIX und Windows?</summary>
+            <div class="answer">UNIX: <strong>fork</strong>. Windows: <strong>CreateProcess</strong>.</div>
+          </details>
+          <details class="q">
+            <summary>3. Nenne drei Vorteile von Prozess-Pipelining.</summary>
+            <div class="answer">Modularisierung (Divide &amp; Conquer), klare Schnittstellen
+              (Testbarkeit/Fehlerabgrenzung), höhere Effizienz (Überlappung von E/A und Rechnen),
+              bessere Echtzeiteigenschaften.</div>
+          </details>
+          <details class="q">
+            <summary>4. Auf welche Arten kann ein Prozess terminieren?</summary>
+            <div class="answer"><strong>Regulär</strong> (exit/ExitProcess), durch einen
+              <strong>Fehler im Programm</strong> (das BS terminiert bei schweren Fehlern) oder
+              <strong>von außen</strong> (Kill/TerminateProcess durch einen anderen Prozess).</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 6 -->
+      <section class="module" id="modul-6">
+        <div class="module__head">
+          <div class="module__num">6</div>
+          <h2>Altklausurfragen</h2>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">📝</div>
+          <div class="callout__body">
+            <p>„Prozesse“ kommt in den Klausuren meist als <strong>Teilaufgabe</strong> vor –
+            besonders der <strong>Kontextwechsel (SS 2008)</strong> und die
+            <strong>Prozesszustände</strong> (SS 2011, Übungsfragen). Hier die echten Aufgaben
+            mit Lösungen.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">★</span><h3>Aus echten Klausuren</h3><span class="count">5 Aufgaben</span>
+          </div>
+
+          <details class="q">
+            <summary>1. Was passiert bei einem Prozesswechsel von P1 zu P2? Beschreiben Sie die Schritte ab dem Aufruf des Dispatchers bis zum Beginn der Ausführung von P2.</summary>
+            <div class="answer">
+              Ab dem Dispatcher:
+              <ul>
+                <li>Speichere den <strong>Programmzähler</strong> von P1 in dessen PCB (Hauptspeicher).</li>
+                <li>Speichere alle <strong>Datenregister inkl. PSW</strong> von P1 in dessen PCB.</li>
+                <li>Lese die <strong>Registerinhalte von P2</strong> aus dessen PCB in den Prozessor.</li>
+                <li>Lade den <strong>Programmzähler von P2</strong> in den Prozessor.</li>
+                <li>Der Prozessor <strong>führt P2 an der gespeicherten Stelle fort</strong>; der BS-Code endet implizit.</li>
+              </ul>
+              Kurz: <strong>Zustand von P1 sichern → Zustand von P2 laden → P2 fortsetzen.</strong>
+              <span class="q-src">Quelle: Klausur SS 2008, Aufgabe 1d</span></div>
+          </details>
+
+          <details class="q">
+            <summary>2. Wie viele Prozesse können sich pro CPU gleichzeitig im Zustand „aktiv“ befinden? Wie viele können bei theoretisch unbegrenztem Speicher blockiert sein?</summary>
+            <div class="answer">
+              <strong>Aktiv:</strong> genau <strong>einer pro CPU</strong> (auf einem
+              Single-Core-Prozessor also genau 1) – die CPU kann zu einem Zeitpunkt nur einen
+              Prozess ausführen. <strong>Blockiert:</strong> <strong>beliebig viele</strong>
+              (nur durch den Speicher begrenzt, der hier als unbegrenzt angenommen wird) –
+              wartende Prozesse belegen die CPU ja nicht.
+              <span class="q-src">Quelle: Klausur SS 2011, Aufgabe 2a</span></div>
+          </details>
+
+          <details class="q">
+            <summary>3. Geben Sie die drei wesentlichen Prozesszustände an. Wie viele Prozesse können sich auf einem Einprozessorsystem mit unbegrenztem Speicher in den jeweiligen Zuständen befinden?</summary>
+            <div class="answer">
+              Zustände: <strong>Aktiv, Bereit, Blockiert</strong>.
+              <ul>
+                <li><strong>Aktiv:</strong> genau 1 (nur ein Prozess bekommt die einzige CPU).</li>
+                <li><strong>Bereit:</strong> beliebig viele.</li>
+                <li><strong>Blockiert:</strong> beliebig viele.</li>
+              </ul>
+              <span class="q-src">Quelle: Übungsfragen 1 (SS14), Aufgabe 1d</span></div>
+          </details>
+
+          <details class="q">
+            <summary>4. Verschiedene Scheduling-Verfahren unterscheiden sich v.a. beim Zugriff auf die Prozesse in einem der Zustände. In welchem? Kurze Begründung.</summary>
+            <div class="answer">
+              Im Zustand <strong>Bereit</strong>. Die <em>bereiten</em> Prozesse konkurrieren
+              um die CPU – der Scheduler entscheidet, <strong>welcher bereite Prozess als
+              Nächstes aktiv wird</strong>. Aktive Prozesse gibt es nur einen, blockierte
+              können ohnehin nicht laufen. Die Scheduling-Strategie (FCFS, SJF, Priorität …)
+              betrifft also die Auswahl aus der Menge der bereiten Prozesse.
+              <span class="q-src">Quelle: Übungsfragen 1 (SS14), Aufgabe 1e</span></div>
+          </details>
+
+          <details class="q">
+            <summary>5. Erklären Sie den Zustandsübergang eines Prozesses, der eine Nachricht empfängt (receive), aber noch keine da ist.</summary>
+            <div class="answer">
+              Der aktive Prozess führt ein <em>receive</em> aus und muss warten →
+              <strong>Aktiv → Blockiert</strong>. Sobald das Kommunikationssubsystem meldet,
+              dass eine Nachricht angekommen ist → <strong>Blockiert → Bereit</strong>. Bekommt
+              er wieder die CPU → <strong>Bereit → Aktiv</strong>, und er kopiert die Nachricht
+              aus dem Kommunikationspuffer in seinen Anwendungspuffer.
+              <span class="q-src">Quelle: Vorlesung „Prozesszustände – 3“ (Folie 3-15)</span></div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Kapitel-Navigation -->
+      <nav class="chapter-nav">
+        <a class="prev" href="kapitel-02.html">
+          <span class="dir">← Vorheriges</span>
+          <span class="ttl">2 · Grundlagen</span>
+        </a>
+        <a class="next" href="kapitel-04.html">
+          <span class="dir">Nächstes →</span>
+          <span class="ttl">4 · Scheduling</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="js/chapter.js"></script>
+</body>
+</html>

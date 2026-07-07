@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kapitel 1 · Einführung · Betriebssysteme</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/chapter.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>" />
+</head>
+<body class="chapter" style="--chapter-accent:#5b8cff;">
+  <div class="progress"></div>
+
+  <!-- ============================================================ TOPBAR -->
+  <div class="topbar">
+    <div class="topbar__inner">
+      <a class="home" href="index.html">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg>
+        Hub
+      </a>
+      <span class="crumb">Kapitel 01 · <b>Einführung</b></span>
+      <span class="spacer"></span>
+      <a class="pdf-link" href="Themen/OS_1_Einfuehrung.pdf" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Skript-PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- ============================================================ LAYOUT -->
+  <div class="chapter-layout">
+
+    <!-- Inhaltsverzeichnis -->
+    <nav class="toc">
+      <div class="toc-title">Module</div>
+      <ol>
+        <li><a href="#modul-1"><span class="mod-num">1</span>Was ist ein Betriebssystem?</a></li>
+        <li><a href="#modul-2"><span class="mod-num">2</span>Aufgaben &amp; Aufgabenbereiche</a></li>
+        <li><a href="#modul-3"><span class="mod-num">3</span>Arten von Betriebssystemen</a></li>
+        <li><a href="#modul-4"><span class="mod-num">4</span>Historische Entwicklung</a></li>
+        <li><a href="#modul-5"><span class="mod-num">5</span>Prüfungs- &amp; Altklausurfragen</a></li>
+      </ol>
+    </nav>
+
+    <!-- Hauptinhalt -->
+    <main class="content">
+
+      <!-- Kapitel-Kopf -->
+      <header class="chapter-hero">
+        <div class="kicker"><span class="ico">🚀</span> Kapitel 01</div>
+        <h1>Einführung in Betriebssysteme</h1>
+        <p class="intro">
+          Dieses Kapitel klärt die Grundfragen: <strong>Was ist überhaupt ein
+          Betriebssystem</strong>, welche Aufgaben erfüllt es, welche Arten gibt
+          es und wie hat es sich historisch entwickelt? Es legt das Fundament,
+          auf dem alle weiteren Kapitel aufbauen.
+        </p>
+
+        <div class="goals">
+          <h4>Nach diesem Kapitel kannst du …</h4>
+          <ul>
+            <li>ein Betriebssystem definieren und im Schichtenmodell einordnen</li>
+            <li>die Kernaufgaben und Aufgabenbereiche eines BS benennen</li>
+            <li>die wichtigsten BS-Arten unterscheiden (Batch, Time-Sharing, Echtzeit …)</li>
+            <li>die historische Entwicklung und ihre Treiber (z.&nbsp;B. Moore) einordnen</li>
+          </ul>
+        </div>
+      </header>
+
+      <!-- =================================================== MODUL 1 -->
+      <section class="module" id="modul-1">
+        <div class="module__head">
+          <div class="module__num">1</div>
+          <h2>Was ist ein Betriebssystem?</h2>
+        </div>
+
+        <p class="lead">
+          Jeder hat schon mit Betriebssystemen gearbeitet – Windows, Linux,
+          macOS, Android. Aber was ist ein Betriebssystem eigentlich <em>genau</em>?
+          Es gibt zwei klassische Definitionen.
+        </p>
+
+        <div class="callout callout--merke">
+          <div class="cico">📖</div>
+          <div class="callout__body">
+            <p><strong>DIN 44300:</strong> Ein Betriebssystem ist die Gesamtheit der
+            <strong>Programme</strong> eines digitalen Rechensystems, die zusammen mit
+            den Eigenschaften der Rechenanlage die Grundlage der möglichen
+            <strong>Betriebsarten</strong> bilden und insbesondere die
+            <strong>Ausführung von Programmen steuern und überwachen</strong>.</p>
+            <p><strong>Wikipedia (sinngemäß):</strong> Software, die den Betrieb eines
+            Computers ermöglicht. Sie <strong>verwaltet Betriebsmittel</strong> wie
+            Speicher, Ein-/Ausgabegeräte und steuert die Ausführung von Programmen.</p>
+          </div>
+        </div>
+
+        <p>
+          Kurz gesagt: Das Betriebssystem ist der <strong>Vermittler</strong>
+          zwischen der Hardware und den Anwendungen. Anwendungen greifen nicht
+          direkt auf die Hardware zu, sondern <em>bitten</em> das Betriebssystem
+          über sogenannte <strong>Systemaufrufe</strong> (System Calls) darum.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 620 300" role="img" aria-label="Betriebssystem als Vermittler zwischen Anwendungen und Hardware">
+            <!-- Anwendungen -->
+            <rect class="sk-box" x="150" y="16" width="320" height="56" rx="10"/>
+            <text class="sk-label" x="310" y="49" text-anchor="middle">Anwendungen  (Prozesse)</text>
+            <!-- Betriebssystem -->
+            <rect class="sk-accent" x="150" y="122" width="320" height="56" rx="10"/>
+            <text class="sk-label" x="310" y="155" text-anchor="middle">Betriebssystem</text>
+            <!-- Hardware -->
+            <rect class="sk-box" x="150" y="228" width="320" height="56" rx="10"/>
+            <text class="sk-label" x="310" y="255" text-anchor="middle">Hardware</text>
+            <text class="sk-sub" x="310" y="273" text-anchor="middle">CPU · RAM · Platte · E/A-Geräte</text>
+            <!-- Pfeile oben -->
+            <path class="sk-arrow" d="M250 72 L250 118" marker-end="url(#ah1)"/>
+            <path class="sk-arrow" d="M370 118 L370 72" marker-end="url(#ah1)"/>
+            <text class="sk-faint" x="486" y="99" text-anchor="start">Systemaufrufe</text>
+            <!-- Pfeile unten -->
+            <path class="sk-arrow" d="M250 178 L250 224" marker-end="url(#ah1)"/>
+            <path class="sk-arrow" d="M370 224 L370 178" marker-end="url(#ah1)"/>
+            <text class="sk-faint" x="486" y="205" text-anchor="start">Steuerung / Treiber</text>
+            <defs>
+              <marker id="ah1" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#5b8cff"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>Das Betriebssystem sitzt „in der Mitte“ und vermittelt zwischen Anwendungen und Hardware.</figcaption>
+        </figure>
+
+        <h3>Das Schichtenmodell</h3>
+        <p>
+          Zoomt man näher heran, erkennt man mehrere <strong>Schichten</strong>.
+          Jede Schicht nutzt die Dienste der darunterliegenden. Das Betriebssystem
+          ist das „Herz“ des Systems direkt über der Hardware. Zusammen mit den
+          <strong>Dienstprogrammen</strong> bildet es die sogenannten
+          <em>Systemprogramme</em>.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 620 360" role="img" aria-label="Schichtenmodell eines Rechensystems">
+            <!-- 5 Schichten -->
+            <rect class="sk-box" x="40" y="16"  width="360" height="48" rx="9"/>
+            <text class="sk-label" x="220" y="46" text-anchor="middle">Anwendungen</text>
+            <text class="sk-sub" x="416" y="45" text-anchor="start">z.&#160;B. Reservierung, Fakturierung</text>
+
+            <rect class="sk-box" x="40" y="78"  width="360" height="48" rx="9"/>
+            <text class="sk-label" x="220" y="108" text-anchor="middle">Middleware</text>
+            <text class="sk-sub" x="416" y="107" text-anchor="start">z.&#160;B. Datenbanken, Dienste</text>
+
+            <rect class="sk-box" x="40" y="140" width="360" height="48" rx="9"/>
+            <text class="sk-label" x="220" y="170" text-anchor="middle">Dienstprogramme</text>
+            <text class="sk-sub" x="416" y="169" text-anchor="start">z.&#160;B. Editoren, Compiler, Shell</text>
+
+            <rect class="sk-accent" x="40" y="202" width="360" height="48" rx="9"/>
+            <text class="sk-label" x="220" y="232" text-anchor="middle">Betriebssystem</text>
+            <text class="sk-sub" x="416" y="231" text-anchor="start">„Herz“ des Systems</text>
+
+            <rect class="sk-box" x="40" y="264" width="360" height="48" rx="9"/>
+            <text class="sk-label" x="220" y="294" text-anchor="middle">Hardware</text>
+            <text class="sk-sub" x="416" y="293" text-anchor="start">CPU, Disk, Memory, USB …</text>
+
+            <!-- Klammer: Systemprogramme (Dienstprogramme + BS) -->
+            <path class="sk-line" d="M406 140 q-10 0 -10 12 v40 q0 12 -12 12 h0 q12 0 12 12 v40 q0 12 10 12"
+                  transform="translate(150,0)" fill="none" stroke="#5b8cff"/>
+            <text class="sk-sub" x="566" y="222" text-anchor="middle" transform="rotate(90 566 222)" fill="#5b8cff">System&#8203;programme</text>
+          </svg>
+          <figcaption>Schichtenmodell: jede Ebene nutzt die darunterliegende. Dienstprogramme + Betriebssystem = Systemprogramme.</figcaption>
+        </figure>
+
+        <h3>Betriebsmittel (Ressourcen)</h3>
+        <p>
+          Ein zentraler Begriff ist das <strong>Betriebsmittel</strong> (engl.
+          <em>resource</em>). Damit sind alle „knappen Güter“ gemeint, die das
+          Betriebssystem verwalten muss:
+        </p>
+        <ul>
+          <li><strong>Prozessor (CPU)</strong> – Rechenzeit</li>
+          <li><strong>Hauptspeicher (RAM)</strong> – Speicherplatz für laufende Programme</li>
+          <li><strong>Ein-/Ausgabegeräte</strong> – Tastatur, Drucker, Netzwerk …</li>
+          <li><strong>Dateien &amp; Massenspeicher</strong> – Festplatte, SSD</li>
+        </ul>
+
+        <div class="callout callout--note">
+          <div class="cico">💡</div>
+          <div class="callout__body">
+            <p>Weil diese Betriebsmittel <strong>begrenzt</strong> sind und von
+            vielen Programmen <strong>gleichzeitig</strong> gebraucht werden, muss
+            sie jemand fair und effizient verteilen – genau das ist die Kernrolle
+            des Betriebssystems.</p>
+          </div>
+        </div>
+
+        <!-- Fragen Modul 1 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span>
+            <h3>Verständnisfragen</h3>
+            <span class="count">4 Fragen</span>
+          </div>
+
+          <details class="q">
+            <summary>1. Definiere ein Betriebssystem in eigenen Worten (Stichworte DIN 44300).</summary>
+            <div class="answer">
+              Ein Betriebssystem ist die <strong>Gesamtheit der Programme</strong>, die
+              die <strong>Betriebsarten</strong> eines Rechners ermöglichen und
+              insbesondere die <strong>Ausführung von Programmen steuern und
+              überwachen</strong>. Es <strong>verwaltet die Betriebsmittel</strong>
+              (CPU, Speicher, E/A) und vermittelt zwischen Hardware und Anwendungen.
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>2. Was zählt im Schichtenmodell zu den „Systemprogrammen“?</summary>
+            <div class="answer">
+              Die <strong>Dienstprogramme</strong> (Editoren, Compiler, Shells …)
+              <strong>und das Betriebssystem</strong> selbst. Anwendungen und
+              Middleware zählen <strong>nicht</strong> dazu.
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>3. Was versteht man unter „Betriebsmitteln“? Nenne Beispiele.</summary>
+            <div class="answer">
+              Betriebsmittel (Ressourcen) sind die begrenzten Güter, die das BS
+              verwaltet: <strong>CPU/Rechenzeit, Hauptspeicher, Ein-/Ausgabegeräte
+              und Dateien/Massenspeicher</strong>.
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>4. Warum bezeichnet man das BS als „Vermittler“ bzw. „Herz“ des Systems?</summary>
+            <div class="answer">
+              Anwendungen greifen <strong>nicht direkt</strong> auf die Hardware zu,
+              sondern über das BS (per <strong>Systemaufrufen</strong>). Das BS
+              koordiniert alle Zugriffe, verteilt die Betriebsmittel und macht die
+              komplexe Hardware einfach nutzbar – es sitzt zentral zwischen Hardware
+              und Anwendungen.
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 2 -->
+      <section class="module" id="modul-2">
+        <div class="module__head">
+          <div class="module__num">2</div>
+          <h2>Aufgaben &amp; Aufgabenbereiche</h2>
+        </div>
+
+        <p class="lead">
+          Man kann ein Betriebssystem aus <strong>zwei Blickwinkeln</strong> sehen –
+          beide erklären, <em>warum</em> es die Aufgaben hat, die es hat.
+        </p>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead>
+              <tr><th>Sichtweise</th><th>Idee</th><th>Fokus</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Erweiterte Maschine</td>
+                <td>Komplexe Hardware einfach &amp; benutzerfreundlich verfügbar machen</td>
+                <td>Bequeme Schnittstelle (Top-down)</td>
+              </tr>
+              <tr>
+                <td>Ressourcenverwalter</td>
+                <td>Begrenzte Betriebsmittel fair &amp; effizient verteilen</td>
+                <td>Verwaltung &amp; Schutz (Bottom-up)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Die Kernaufgaben</h3>
+        <ul>
+          <li><strong>Hardware verfügbar machen</strong> – benutzerfreundliche
+              Schnittstellen, höherwertige Dienste für Programmierer.</li>
+          <li><strong>Betriebsmittelverwaltung</strong> – jeder Anwendung geben, „was
+              sie braucht“; parallele Ausführung unterstützen;
+              <em>Synchronisation, Fairness, Effizienz</em>.</li>
+          <li><strong>Kommunikation &amp; Synchronisation</strong> der Programme
+              untereinander.</li>
+          <li><strong>Schutz &amp; Sicherheit</strong> – Benutzer voreinander schützen
+              und das System vor sich selbst.</li>
+          <li><strong>Fehlererkennung und -behandlung</strong>.</li>
+        </ul>
+
+        <h3>Die Aufgabenbereiche</h3>
+        <p>
+          Konkret gliedert sich das in acht Aufgabenbereiche – viele davon sind
+          <strong>eigene Kapitel</strong> dieser Zusammenfassung:
+        </p>
+
+        <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;padding-bottom:0;">
+          <div class="card" style="--card-accent:#5b8cff;min-height:auto;padding:14px 16px;"><b>Prozessverwaltung</b><br><span class="sk-sub" style="font-size:.85rem">→ Kapitel 3</span></div>
+          <div class="card" style="--card-accent:#eb5757;min-height:auto;padding:14px 16px;"><b>Scheduling</b><br><span class="sk-sub" style="font-size:.85rem">Aufgabenverwaltung → Kapitel 4</span></div>
+          <div class="card" style="--card-accent:#56ccf2;min-height:auto;padding:14px 16px;"><b>Speicherverwaltung</b><br><span class="sk-sub" style="font-size:.85rem">→ Kapitel 9</span></div>
+          <div class="card" style="--card-accent:#f2994a;min-height:auto;padding:14px 16px;"><b>Ein-/Ausgabeverwaltung</b><br><span class="sk-sub" style="font-size:.85rem">E/A-Geräte</span></div>
+          <div class="card" style="--card-accent:#f2c94c;min-height:auto;padding:14px 16px;"><b>Dateiverwaltung</b><br><span class="sk-sub" style="font-size:.85rem">→ Kapitel 10</span></div>
+          <div class="card" style="--card-accent:#27ae60;min-height:auto;padding:14px 16px;"><b>Interprozess-Kommunikation</b><br><span class="sk-sub" style="font-size:.85rem">IPC → Kapitel 7</span></div>
+          <div class="card" style="--card-accent:#2f80ed;min-height:auto;padding:14px 16px;"><b>Interprozess-Synchronisation</b><br><span class="sk-sub" style="font-size:.85rem">→ Kapitel 6</span></div>
+          <div class="card" style="--card-accent:#bb6bd9;min-height:auto;padding:14px 16px;"><b>Accounting</b><br><span class="sk-sub" style="font-size:.85rem">Abrechnung / Buchführung</span></div>
+        </div>
+
+        <div class="callout callout--note">
+          <div class="cico">💡</div>
+          <div class="callout__body">
+            <p><strong>Warum ist parallele Ausführung überhaupt nötig?</strong> Weil
+            die CPU sonst viel Zeit mit <strong>Warten</strong> verschwendet – z.&nbsp;B.
+            während ein Programm auf langsame Ein-/Ausgabe (Festplatte, Netzwerk)
+            wartet. In dieser Wartezeit kann das BS die CPU einem anderen Programm
+            geben → bessere <strong>Auslastung</strong>. Mehr dazu in Modul 4.</p>
+          </div>
+        </div>
+
+        <!-- Fragen Modul 2 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span>
+            <h3>Verständnisfragen</h3>
+            <span class="count">4 Fragen</span>
+          </div>
+
+          <details class="q">
+            <summary>1. Nenne die zwei Sichtweisen auf ein Betriebssystem.</summary>
+            <div class="answer">
+              <strong>Erweiterte Maschine</strong> (macht komplexe Hardware bequem
+              nutzbar) und <strong>Ressourcenverwalter</strong> (verteilt begrenzte
+              Betriebsmittel fair und effizient).
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>2. Nenne mindestens fünf Kernaufgaben eines Betriebssystems.</summary>
+            <div class="answer">
+              <ul>
+                <li>Hardware benutzerfreundlich verfügbar machen</li>
+                <li>Betriebsmittelverwaltung (CPU, Speicher, E/A)</li>
+                <li>Kommunikation &amp; Synchronisation der Programme</li>
+                <li>Schutz &amp; Sicherheit</li>
+                <li>Fehlererkennung und -behandlung</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>3. Nenne sechs der acht Aufgabenbereiche eines BS.</summary>
+            <div class="answer">
+              Prozessverwaltung, <strong>Scheduling</strong> (Aufgabenverwaltung),
+              Speicherverwaltung, Ein-/Ausgabeverwaltung, Dateiverwaltung,
+              Interprozess-Kommunikation (IPC), Interprozess-Synchronisation,
+              Accounting (Abrechnung).
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>4. Welche Ziele verfolgt die Betriebsmittelverwaltung?</summary>
+            <div class="answer">
+              Jede Anwendung soll bekommen, „was sie braucht“; parallele Ausführung
+              soll unterstützt werden; die Nutzung wird <strong>synchronisiert/
+              koordiniert</strong>; angestrebt werden <strong>Fairness</strong> und
+              <strong>Effizienz</strong>.
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 3 -->
+      <section class="module" id="modul-3">
+        <div class="module__head">
+          <div class="module__num">3</div>
+          <h2>Arten von Betriebssystemen</h2>
+        </div>
+
+        <p class="lead">
+          Betriebssysteme sind auf ihren Einsatzzweck zugeschnitten. Fünf große
+          Klassen sollte man unterscheiden können:
+        </p>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead>
+              <tr><th>Art</th><th>Merkmal</th><th>Beispiel</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Batch (Stapel)</td><td>Automatische Abarbeitung von „Jobs“, kaum interaktiv – eher historisch</td><td>IBM System/360</td></tr>
+              <tr><td>Multi-User Time-Sharing</td><td>Interaktive Nutzung, viele „konkurrierende“ Benutzer/Anwendungen – heute Standard</td><td>Windows, UNIX/Linux</td></tr>
+              <tr><td>Echtzeit (Real-Time)</td><td>Garantierte Antwortzeiten; oft in Embedded Systems</td><td>VxWorks, RT-UNIX</td></tr>
+              <tr><td>Mobile Kleinst-BS</td><td>Optimiert auf geringen Speicherbedarf &amp; Stromverbrauch</td><td>Windows CE (früher), Android/iOS</td></tr>
+              <tr><td>Verteilte / Netzwerk-BS</td><td>Umspannen mehrere Rechner (Forschungsfeld)</td><td>AMOEBA</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout--merke">
+          <div class="cico">📌</div>
+          <div class="callout__body">
+            <p><strong>Merke den Kern-Kontrast:</strong> <em>Batch</em> = „ein Job
+            nach dem anderen, kein Nutzer wartet interaktiv“. <em>Time-Sharing</em> =
+            „viele Nutzer teilen sich die CPU in Zeitscheiben, alle arbeiten
+            interaktiv“. <em>Echtzeit</em> = „nicht möglichst schnell, sondern
+            <u>garantiert rechtzeitig</u>“.</p>
+          </div>
+        </div>
+
+        <!-- Fragen Modul 3 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span>
+            <h3>Verständnisfragen</h3>
+            <span class="count">4 Fragen</span>
+          </div>
+
+          <details class="q">
+            <summary>1. Nenne und charakterisiere vier Arten von Betriebssystemen.</summary>
+            <div class="answer">
+              <ul>
+                <li><strong>Batch:</strong> automatische Job-Abarbeitung, kaum interaktiv.</li>
+                <li><strong>Time-Sharing:</strong> viele konkurrierende Benutzer, interaktiv (Standard).</li>
+                <li><strong>Echtzeit:</strong> garantierte Antwortzeiten.</li>
+                <li><strong>Mobile Kleinst-BS:</strong> minimaler Speicher- &amp; Stromverbrauch.</li>
+              </ul>
+              (Fünfte: <strong>Verteilte/Netzwerk-BS</strong> über mehrere Rechner.)
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>2. Was kennzeichnet ein Echtzeitbetriebssystem? Beispiel?</summary>
+            <div class="answer">
+              Es realisiert <strong>garantierte Antwortzeiten</strong> – Ergebnisse
+              müssen <strong>rechtzeitig</strong> (bis zu einer Deadline) vorliegen,
+              nicht nur „schnell im Mittel“. Häufig in <strong>Embedded Systems</strong>.
+              Beispiel: <strong>VxWorks</strong>, RT-UNIX.
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>3. Worin unterscheiden sich Batch- und Time-Sharing-Systeme?</summary>
+            <div class="answer">
+              <strong>Batch:</strong> Jobs werden automatisch nacheinander abgearbeitet,
+              keine (oder nur zweitrangige) interaktive Nutzung. <strong>Time-Sharing:</strong>
+              mehrere Benutzer nutzen das System <strong>gleichzeitig und interaktiv</strong>,
+              die CPU wird in Zeitscheiben aufgeteilt.
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>4. Worauf sind mobile Kleinstbetriebssysteme besonders optimiert?</summary>
+            <div class="answer">
+              Auf <strong>geringen Speicherbedarf</strong> und <strong>niedrigen
+              Stromverbrauch</strong> (Akku-Laufzeit).
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 4 -->
+      <section class="module" id="modul-4">
+        <div class="module__head">
+          <div class="module__num">4</div>
+          <h2>Historische Entwicklung</h2>
+        </div>
+
+        <p class="lead">
+          Die Geschichte der Betriebssysteme ist eng an die Hardware gekoppelt:
+          Wurde die Hardware schneller und billiger, verschoben sich auch die
+          Aufgaben des Betriebssystems.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 760 300" role="img" aria-label="Zeitstrahl der Betriebssystem-Geschichte">
+            <line class="sk-line" x1="40" y1="150" x2="720" y2="150" stroke-width="2"/>
+            <!-- Punkte -->
+            <g>
+              <circle cx="95"  cy="150" r="7" fill="#5b8cff"/>
+              <circle cx="245" cy="150" r="7" fill="#5b8cff"/>
+              <circle cx="395" cy="150" r="7" fill="#5b8cff"/>
+              <circle cx="545" cy="150" r="7" fill="#5b8cff"/>
+              <circle cx="690" cy="150" r="7" fill="#5b8cff"/>
+            </g>
+            <!-- Jahreslabels -->
+            <text class="sk-faint" x="95"  y="175" text-anchor="middle">1945–55</text>
+            <text class="sk-faint" x="245" y="175" text-anchor="middle">1955–65</text>
+            <text class="sk-faint" x="395" y="175" text-anchor="middle">1965–85</text>
+            <text class="sk-faint" x="545" y="175" text-anchor="middle">1980–95</text>
+            <text class="sk-faint" x="690" y="175" text-anchor="middle">1995–heute</text>
+            <!-- Callouts oben -->
+            <text class="sk-sub" x="95"  y="120" text-anchor="middle">Kein BS</text>
+            <text class="sk-sub" x="95"  y="105" text-anchor="middle">Programm</text>
+            <text class="sk-sub" x="95"  y="90"  text-anchor="middle">verwaltet sich</text>
+            <text class="sk-sub" x="395" y="120" text-anchor="middle">Time-Sharing,</text>
+            <text class="sk-sub" x="395" y="105" text-anchor="middle">Terminals,</text>
+            <text class="sk-sub" x="395" y="90"  text-anchor="middle">Schutzkonzepte</text>
+            <text class="sk-sub" x="690" y="120" text-anchor="middle">Internet, Multicore,</text>
+            <text class="sk-sub" x="690" y="105" text-anchor="middle">Mobile, Cloud,</text>
+            <text class="sk-sub" x="690" y="90"  text-anchor="middle">Virtualisierung</text>
+            <!-- Callouts unten -->
+            <text class="sk-sub" x="245" y="210" text-anchor="middle">Batch-Systeme,</text>
+            <text class="sk-sub" x="245" y="225" text-anchor="middle">Mehrprogramm-</text>
+            <text class="sk-sub" x="245" y="240" text-anchor="middle">betrieb</text>
+            <text class="sk-sub" x="545" y="210" text-anchor="middle">PC &amp; Workstation,</text>
+            <text class="sk-sub" x="545" y="225" text-anchor="middle">GUIs, Netzwerke,</text>
+            <text class="sk-sub" x="545" y="240" text-anchor="middle">Mikrokernel</text>
+          </svg>
+          <figcaption>Grober Zeitstrahl der Betriebssystem-Entwicklung.</figcaption>
+        </figure>
+
+        <h3>Die Epochen im Detail</h3>
+        <ul>
+          <li><strong>1945–1955 – kein Betriebssystem:</strong> Hardware teuer und
+              langsam. Das Programm „verwaltet sich selbst“, sämtliche E/A-Aufgaben
+              sind Teil des Programms.</li>
+          <li><strong>1955–1965 – erste Batch-Systeme:</strong> auf Mainframes. Ein
+              „Job“ = Einlesen (Lochkarten/Band) → Rechnen → Ausgabe. Das BS steuert
+              die Abarbeitung, gesteuert per <em>Job Control Language</em>. Später:
+              <strong>Mehrprogrammbetrieb</strong> („verzahnte“ Abarbeitung).</li>
+          <li><strong>1965–1985 – Time-Sharing:</strong> schnellere CPUs, jeder
+              Benutzer hat sein eigenes („dummes“) Terminal, interaktive Nutzung wird
+              wichtig. Speicher- und <strong>Schutzkonzepte</strong> gewinnen an
+              Bedeutung. Beispiele: IBM OS/360, Multics.</li>
+          <li><strong>1980–1995 – PC &amp; Workstation:</strong> Speicher/CPU werden
+              dank <em>Moore’schem Gesetz</em> massiv billiger. DOS/Windows/UNIX,
+              grafische Oberflächen, Mikrokernel, Netzwerke (TCP/IP), Client-Server.</li>
+          <li><strong>1995–heute:</strong> Internet für alle, Multicore-CPUs, Embedded
+              &amp; Mobile (Android, iOS), <strong>Virtualisierung</strong> und
+              <strong>Cloud Computing</strong>.</li>
+        </ul>
+
+        <div class="callout callout--note">
+          <div class="cico">📈</div>
+          <div class="callout__body">
+            <p><strong>Moore’sches Gesetz:</strong> Die Integrationsdichte / Leistung
+            von Chips verdoppelt sich etwa alle <strong>18 Monate</strong>. Das machte
+            Hardware immer billiger und leistungsfähiger – und verschob den Fokus der
+            Betriebssysteme von reiner Effizienz hin zu Komfort, Vernetzung und Schutz.</p>
+          </div>
+        </div>
+
+        <div class="callout callout--merke">
+          <div class="cico">📌</div>
+          <div class="callout__body">
+            <p><strong>Mehrprogrammbetrieb (Multiprogramming):</strong> Mehrere Jobs
+            liegen gleichzeitig im Speicher. Muss ein Job auf langsame E/A warten,
+            bekommt ein anderer die CPU. So bleibt der teure Prozessor
+            <strong>ausgelastet</strong> statt zu warten – der zentrale Grund für
+            „verzahnte“ Abarbeitung.</p>
+          </div>
+        </div>
+
+        <!-- Fragen Modul 4 -->
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span>
+            <h3>Verständnisfragen</h3>
+            <span class="count">4 Fragen</span>
+          </div>
+
+          <details class="q">
+            <summary>1. Warum gab es in der Epoche 1945–1955 noch kein Betriebssystem?</summary>
+            <div class="answer">
+              Die Hardware war teuer, langsam und in kleinen Stückzahlen gefertigt.
+              Ein Programm lief nur auf <strong>einer</strong> Maschine und
+              „verwaltete sich selbst“ – alle E/A-Aufgaben waren <strong>Teil des
+              Programms</strong>. Es gab keine gemeinsame Verwaltungsschicht.
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>2. Was ist Mehrprogrammbetrieb und welchen Vorteil bringt er?</summary>
+            <div class="answer">
+              Mehrere Programme/Jobs sind gleichzeitig im Speicher. Wartet eines auf
+              <strong>langsame E/A</strong>, erhält ein anderes die CPU. Vorteil:
+              <strong>bessere CPU-Auslastung</strong>, die teure CPU wartet nicht
+              untätig.
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>3. Was besagt das Moore’sche Gesetz?</summary>
+            <div class="answer">
+              Die Integrationsdichte bzw. Leistung von Chips <strong>verdoppelt sich
+              etwa alle 18 Monate</strong> – Hardware wird also stetig leistungsfähiger
+              und günstiger.
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>4. Nenne typische Merkmale der Time-Sharing-Ära (1965–85).</summary>
+            <div class="answer">
+              Schnellere CPUs &amp; E/A, <strong>interaktive Nutzung</strong> über
+              eigene Terminals, wachsende Bedeutung von <strong>Speicher- und
+              Schutzkonzepten</strong>. Beispiele: IBM OS/360, Multics.
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 5 -->
+      <section class="module" id="modul-5">
+        <div class="module__head">
+          <div class="module__num">5</div>
+          <h2>Prüfungs- &amp; Altklausurfragen</h2>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">📝</div>
+          <div class="callout__body">
+            <p>In den vorliegenden Altklausuren (SS 07–SS 21) liegt der Schwerpunkt
+            auf den <strong>technischen Kapiteln</strong> (Scheduling, Synchronisation,
+            Deadlocks, Speicher). „Einführung“ kommt <strong>selten als eigene
+            Aufgabe</strong> dran – ihre Begriffe sind aber die <strong>Grundlage</strong>
+            für alle anderen Aufgaben. Die folgenden Fragen sind im <strong>Stil der
+            Klausur- und Übungsfragen</strong> auf dieses Kapitel zugeschnitten.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">★</span>
+            <h3>Im Klausurstil</h3>
+            <span class="count">5 Fragen</span>
+          </div>
+
+          <details class="q">
+            <summary>1. Erläutern Sie die zwei Sichtweisen auf ein Betriebssystem.</summary>
+            <div class="answer">
+              <strong>(1) Erweiterte Maschine / Top-down:</strong> Das BS verbirgt die
+              komplexe, unbequeme Hardware und bietet den Anwendungen eine einfache,
+              saubere Schnittstelle. <strong>(2) Ressourcenverwalter / Bottom-up:</strong>
+              Das BS teilt die begrenzten Betriebsmittel (CPU, Speicher, E/A)
+              geordnet, fair und effizient unter konkurrierenden Programmen auf und
+              schützt sie voreinander.
+              <span class="q-src">Quelle: Vorlesungskonzept „Aufgaben eines Betriebssystems“</span>
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>2. Warum ist eine „verzahnte“ (parallele) Abarbeitung mehrerer Programme sinnvoll?</summary>
+            <div class="answer">
+              Ein einzelnes Programm wartet oft auf <strong>langsame Ein-/Ausgabe</strong>
+              (Platte, Netzwerk). Während dieser Wartezeit stünde die CPU still. Durch
+              Mehrprogrammbetrieb erhält in dieser Zeit ein <strong>anderes Programm</strong>
+              die CPU → <strong>höhere Auslastung und Effizienz</strong>.
+              <span class="q-src">Quelle: Historie 1955–65 / „Warum nötig?“</span>
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>3. Ordnen Sie folgende Begriffe den Aufgabenbereichen zu: „Zeitscheibe verteilen“, „Nachrichten zwischen Prozessen austauschen“, „Zugriff auf gemeinsame Daten koordinieren“.</summary>
+            <div class="answer">
+              <ul>
+                <li>Zeitscheibe verteilen → <strong>Scheduling</strong> (Aufgabenverwaltung, Kap.&nbsp;4)</li>
+                <li>Nachrichten austauschen → <strong>Interprozess-Kommunikation (IPC)</strong>, Kap.&nbsp;7</li>
+                <li>Zugriff auf gemeinsame Daten koordinieren → <strong>Interprozess-Synchronisation</strong>, Kap.&nbsp;6</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>4. Multiple Choice – welche Aussagen sind richtig?</summary>
+            <div class="answer">
+              <ul>
+                <li>☑ Das Betriebssystem verwaltet Betriebsmittel wie CPU, Speicher und E/A. <strong>(richtig)</strong></li>
+                <li>☐ Anwendungen greifen direkt und ohne das BS auf die Hardware zu. <strong>(falsch – über Systemaufrufe)</strong></li>
+                <li>☑ Dienstprogramme und Betriebssystem bilden zusammen die Systemprogramme. <strong>(richtig)</strong></li>
+                <li>☐ Ein Echtzeitbetriebssystem ist einfach „ein besonders schnelles“ BS. <strong>(falsch – es garantiert Antwortzeiten)</strong></li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="q">
+            <summary>5. Nennen Sie drei Aufgaben, die ein Betriebssystem im Bereich „Schutz &amp; Sicherheit / Fehler“ übernimmt.</summary>
+            <div class="answer">
+              <strong>Benutzer voreinander schützen</strong> (kein unerlaubter Zugriff
+              auf fremde Daten/Speicher), <strong>sich selbst schützen</strong> (Kernel
+              vor fehlerhaften Programmen), sowie <strong>Fehler erkennen und behandeln</strong>.
+              <span class="q-src">Quelle: „Aufgaben eines Betriebssystems“</span>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Kapitel-Navigation -->
+      <nav class="chapter-nav">
+        <a class="prev disabled" aria-disabled="true">
+          <span class="dir">← Vorheriges</span>
+          <span class="ttl">—</span>
+        </a>
+        <a class="next" href="kapitel-02.html">
+          <span class="dir">Nächstes →</span>
+          <span class="ttl">2 · Grundlagen</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="js/chapter.js"></script>
+</body>
+</html>
