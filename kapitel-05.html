@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kapitel 5 · Threads · Betriebssysteme</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/chapter.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧵</text></svg>" />
+</head>
+<body class="chapter" style="--chapter-accent:#bb6bd9;">
+  <div class="progress"></div>
+
+  <!-- ============================================================ TOPBAR -->
+  <div class="topbar">
+    <div class="topbar__inner">
+      <a class="home" href="index.html">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg>
+        Hub
+      </a>
+      <span class="crumb">Kapitel 05 · <b>Threads</b></span>
+      <span class="spacer"></span>
+      <a class="pdf-link" href="Themen/OS_5_Threads_deutsch.pdf" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Skript-PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- ============================================================ LAYOUT -->
+  <div class="chapter-layout">
+
+    <!-- Inhaltsverzeichnis -->
+    <nav class="toc">
+      <div class="toc-title">Module</div>
+      <ol>
+        <li><a href="#modul-1"><span class="mod-num">1</span>Was sind Threads?</a></li>
+        <li><a href="#modul-2"><span class="mod-num">2</span>Warum Threads?</a></li>
+        <li><a href="#modul-3"><span class="mod-num">3</span>Benutzer- vs. Kernel-Threads</a></li>
+        <li><a href="#modul-4"><span class="mod-num">4</span>Hyperthreading &amp; Multicore</a></li>
+        <li><a href="#modul-5"><span class="mod-num">5</span>Altklausurfragen</a></li>
+      </ol>
+    </nav>
+
+    <!-- Hauptinhalt -->
+    <main class="content">
+
+      <!-- Kapitel-Kopf -->
+      <header class="chapter-hero">
+        <div class="kicker"><span class="ico">🧵</span> Kapitel 05</div>
+        <h1>Threads</h1>
+        <p class="intro">
+          Ein <strong>Thread</strong> ist ein „Faden“ – ein Ablaufstrang innerhalb eines
+          Prozesses. Threads sind <strong>leichtgewichtige Prozesse</strong>, die sich den
+          Adressraum teilen. In diesem Kapitel: was Threads sind, warum man sie nutzt, der
+          Unterschied zwischen <strong>Benutzer- und Kernel-Threads</strong> und wie
+          <strong>Hyperthreading/Multicore</strong> sie unterstützt.
+        </p>
+
+        <div class="goals">
+          <h4>Nach diesem Kapitel kannst du …</h4>
+          <ul>
+            <li>Threads definieren und von Prozessen abgrenzen (was ist gemeinsam, was getrennt?)</li>
+            <li>Vor- und Nachteile von Threads gegenüber Prozessen benennen</li>
+            <li>Benutzer- und Kernel-Threads gegenüberstellen (inkl. Jacketing)</li>
+            <li>erklären, wie Hyperthreading/Multicore Threads unterstützt</li>
+          </ul>
+        </div>
+      </header>
+
+      <!-- =================================================== MODUL 1 -->
+      <section class="module" id="modul-1">
+        <div class="module__head">
+          <div class="module__num">1</div>
+          <h2>Was sind Threads?</h2>
+        </div>
+
+        <p class="lead">
+          Ein <strong>Thread</strong> (engl. „Faden“) ist ein <em>(Teil-)Programm in
+          Ausführung</em> – ein leichtgewichtiger Prozess. Jeder Prozess kann
+          <strong>einen oder mehrere</strong> Threads beherbergen.
+        </p>
+
+        <div class="callout callout--merke">
+          <div class="cico">🧵</div>
+          <div class="callout__body">
+            <p><strong>Kern-Idee:</strong> Nach <em>außen</em> agieren die Threads eines
+            Prozesses wie <strong>1 Prozess</strong>, nach <em>innen</em> wie <strong>N
+            Prozesse</strong> mit Zugriff auf <strong>gemeinsame Anwendungsdaten</strong>.</p>
+          </div>
+        </div>
+
+        <p>Was gilt für die Threads <em>eines</em> Prozesses?</p>
+        <ul>
+          <li>sie laufen (konzeptionell) alle <strong>parallel/nebenläufig</strong> ab</li>
+          <li>jeder Thread hat einen <strong>eigenen Threadkontrollblock</strong> (Zustand, Priorität, Register)</li>
+          <li>alle Threads haben <strong>denselben Adressraum</strong>: gemeinsame globale
+              Variablen, gemeinsamer Heap – <strong>aber je einen eigenen Stack</strong></li>
+          <li>alle Threads teilen sich <strong>dieselben externen Betriebsmittel</strong>
+              (offene Dateien, E/A-Geräte …)</li>
+        </ul>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 360" role="img" aria-label="Speichermodell eines Prozesses mit mehreren Threads">
+            <!-- Prozessrahmen -->
+            <rect x="30" y="30" width="660" height="308" rx="14" fill="none" stroke="#bb6bd9" stroke-width="2"/>
+            <text class="sk-label" x="50" y="55" text-anchor="start" fill="#bb6bd9">Prozess</text>
+
+            <!-- Gemeinsamer Bereich -->
+            <rect x="52" y="66" width="616" height="86" rx="9" fill="color-mix(in srgb,#bb6bd9 16%,#1a2029)" stroke="#bb6bd9" stroke-width="1.3"/>
+            <text class="sk-label" x="360" y="92" text-anchor="middle">Gemeinsam für ALLE Threads</text>
+            <text class="sk-sub" x="360" y="116" text-anchor="middle">Programmcode · globale Daten · Heap</text>
+            <text class="sk-sub" x="360" y="136" text-anchor="middle">offene Dateien &amp; Betriebsmittel</text>
+
+            <!-- Thread-Spalten -->
+            <g>
+              <rect x="72" y="172" width="176" height="146" rx="9" class="sk-box"/>
+              <text class="sk-label" x="160" y="198" text-anchor="middle">Thread 1</text>
+              <rect x="272" y="172" width="176" height="146" rx="9" class="sk-box"/>
+              <text class="sk-label" x="360" y="198" text-anchor="middle">Thread 2</text>
+              <rect x="472" y="172" width="176" height="146" rx="9" class="sk-box"/>
+              <text class="sk-label" x="560" y="198" text-anchor="middle">Thread 3</text>
+            </g>
+            <!-- pro Thread eigene Elemente -->
+            <g class="sk-sub" text-anchor="middle">
+              <text x="160" y="228">eigener Stack</text>
+              <text x="160" y="252">eigene Register</text>
+              <text x="160" y="276">eigener PC</text>
+              <text x="160" y="300">Prio &amp; Zustand</text>
+
+              <text x="360" y="228">eigener Stack</text>
+              <text x="360" y="252">eigene Register</text>
+              <text x="360" y="276">eigener PC</text>
+              <text x="360" y="300">Prio &amp; Zustand</text>
+
+              <text x="560" y="228">eigener Stack</text>
+              <text x="560" y="252">eigene Register</text>
+              <text x="560" y="276">eigener PC</text>
+              <text x="560" y="300">Prio &amp; Zustand</text>
+            </g>
+          </svg>
+          <figcaption>Alle Threads teilen sich Code, globale Daten, Heap und Betriebsmittel – aber jeder hat seinen <strong>eigenen Stack</strong>, eigene Register und einen eigenen Programmzähler.</figcaption>
+        </figure>
+
+        <h3>Thread vs. Prozess</h3>
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Zwei Prozesse …</th><th>Zwei Threads (eines Prozesses) …</th></tr></thead>
+            <tbody>
+              <tr><td>laufen parallel</td><td>laufen parallel</td></tr>
+              <tr><td>haben je eigene lokale Daten</td><td>haben je eigene lokale Daten</td></tr>
+              <tr><td>werden i.&nbsp;d.&nbsp;R. unabhängig erzeugt/terminiert</td><td>terminieren <strong>automatisch alle</strong>, wenn der Prozess terminiert</td></tr>
+              <tr><td><strong>können nicht</strong> auf globale Daten des anderen zugreifen</td><td><strong>können</strong> auf globale Daten des anderen zugreifen</td></tr>
+              <tr><td>greifen i.&nbsp;d.&nbsp;R. <strong>nicht</strong> auf dieselben Betriebsmittel zu</td><td>greifen auf <strong>dieselben</strong> externen Betriebsmittel zu</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was teilen sich die Threads eines Prozesses – und was hat jeder Thread für sich?</summary>
+            <div class="answer"><strong>Gemeinsam:</strong> Adressraum (globale Variablen, Heap),
+              Code und externe Betriebsmittel (offene Dateien). <strong>Eigen pro Thread:</strong>
+              Stack, Register, Programmzähler und Threadkontrollblock (Zustand/Priorität).</div>
+          </details>
+          <details class="q">
+            <summary>2. Was passiert mit den Threads, wenn ihr Prozess terminiert?</summary>
+            <div class="answer">Es terminieren <strong>automatisch alle Threads</strong> des
+              Prozesses – anders als Prozesse, die unabhängig voneinander enden.</div>
+          </details>
+          <details class="q">
+            <summary>3. „Nach außen wie 1, nach innen wie N“ – was bedeutet das?</summary>
+            <div class="answer">Nach außen erscheint das Ganze als <strong>ein Prozess</strong>;
+              intern laufen aber <strong>N Threads</strong> nebenläufig und arbeiten auf
+              <strong>gemeinsamen Anwendungsdaten</strong>.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 2 -->
+      <section class="module" id="modul-2">
+        <div class="module__head">
+          <div class="module__num">2</div>
+          <h2>Warum Threads?</h2>
+        </div>
+
+        <p class="lead">
+          Threads bringen zwei große Vorteile gegenüber Prozessen – aber „nichts ist umsonst“.
+        </p>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th></th><th>Threads gegenüber Prozessen</th></tr></thead>
+            <tbody>
+              <tr><td>Vorteil 1</td><td><strong>„Billiger“:</strong> weniger CPU-Zeit zum Einrichten/Terminieren; Scheduling zwischen Threads desselben Prozesses ist schneller.</td></tr>
+              <tr><td>Vorteil 2</td><td><strong>Gemeinsame Daten:</strong> Threads arbeiten direkt auf gemeinsamen Daten. Prozesse bräuchten dafür teure Interprozesskommunikation (IPC).</td></tr>
+              <tr><td>Nachteil</td><td><strong>Schutzverlust:</strong> das Programm verliert die natürlichen Schutzmechanismen zwischen Prozessen. Ein Thread kann bei falscher Programmierung einen anderen stören.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">⚠️</div>
+          <div class="callout__body">
+            <p><strong>Die Kehrseite gemeinsamer Daten:</strong> <strong>Unsynchronisierter
+            Zugriff</strong> mehrerer Threads auf eine gemeinsame Variable kann zu
+            <strong>undefinierten Dateninhalten</strong> führen (Race Condition!). Die Abhilfe –
+            Synchronisation (z.&nbsp;B. Mutex / <code>synchronized</code>) – ist genau das Thema
+            von <strong>Kapitel&nbsp;6</strong>.</p>
+          </div>
+        </div>
+
+        <h3>Wann setzt man Threads ein?</h3>
+        <ul>
+          <li><strong>Parallelisierung von Aufgaben</strong> (Pipelining, Vordergrund-/Hintergrund-Tasks)</li>
+          <li><strong>Komplexe, mehrteilige Aufgaben auf gemeinsamen Daten</strong></li>
+          <li><strong>Modularisierung</strong> (jeder Thread eine Teilaufgabe) oder
+              <strong>Parallelisierung EINER Aufgabe</strong> auf Multicore-Rechnern</li>
+          <li>Threads statt Prozessfamilien, um den Zugriff auf gemeinsame Daten zu erleichtern</li>
+          <li>wenn man schnell &amp; billig viele Ablaufstränge erzeugen/beenden will
+              (z.&nbsp;B. <strong>Server-Requests</strong>)</li>
+        </ul>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Nenne die zwei Hauptvorteile von Threads gegenüber Prozessen.</summary>
+            <div class="answer">(1) Sie sind <strong>billiger</strong> (schneller zu erzeugen,
+              terminieren und zu schedulen). (2) Sie können direkt auf <strong>gemeinsamen
+              Daten</strong> arbeiten (Prozesse bräuchten teure IPC).</div>
+          </details>
+          <details class="q">
+            <summary>2. Was ist der zentrale Nachteil / die Gefahr bei Threads?</summary>
+            <div class="answer">Verlust der natürlichen <strong>Schutzmechanismen</strong>: ein
+              Thread kann bei falscher Programmierung einen anderen stören. Insbesondere kann
+              <strong>unsynchronisierter Zugriff</strong> auf gemeinsame Variablen zu undefinierten
+              Werten führen (→ Synchronisation, Kap.&nbsp;6).</div>
+          </details>
+          <details class="q">
+            <summary>3. Warum eignen sich Threads gut für einen Webserver?</summary>
+            <div class="answer">Für jede eingehende Anfrage kann <strong>schnell und billig</strong>
+              ein eigener Ablaufstrang (Thread) erzeugt und danach wieder beendet werden – bei
+              gemeinsamem Zugriff auf die Serverdaten, ohne teure Prozesserzeugung/IPC.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 3 -->
+      <section class="module" id="modul-3">
+        <div class="module__head">
+          <div class="module__num">3</div>
+          <h2>Benutzer- vs. Kernel-Threads</h2>
+        </div>
+
+        <p class="lead">
+          Threads können auf zwei Ebenen verwaltet werden: <strong>im Benutzerraum</strong>
+          (durch eine Thread-Bibliothek) oder <strong>im Kernel</strong> (durch das
+          Betriebssystem). Es gibt drei Grundmodelle.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 320" role="img" aria-label="Benutzer-Threads, Kernel-Threads und Kombination">
+            <!-- Trennlinien Panels -->
+            <g class="sk-faint" font-size="12.5" text-anchor="middle" fill="#c9d1d9">
+              <text x="126" y="24">(a) Reine Benutzerebene</text>
+              <text x="360" y="24">(b) Reine Kernel-Ebene</text>
+              <text x="593" y="24">(c) Kombination</text>
+            </g>
+
+            <!-- Kernel-Grenzen -->
+            <line x1="20" y1="180" x2="233" y2="180" stroke="#5c6672" stroke-width="2.5"/>
+            <line x1="253" y1="180" x2="466" y2="180" stroke="#5c6672" stroke-width="2.5"/>
+            <line x1="486" y1="180" x2="700" y2="180" stroke="#5c6672" stroke-width="2.5"/>
+
+            <!-- Panel A -->
+            <g>
+              <circle cx="70" cy="55" r="12" fill="color-mix(in srgb,#bb6bd9 40%,#1a2029)" stroke="#bb6bd9"/><text x="70" y="59" text-anchor="middle" class="sk-sub">T</text>
+              <circle cx="126" cy="55" r="12" fill="color-mix(in srgb,#bb6bd9 40%,#1a2029)" stroke="#bb6bd9"/><text x="126" y="59" text-anchor="middle" class="sk-sub">T</text>
+              <circle cx="182" cy="55" r="12" fill="color-mix(in srgb,#bb6bd9 40%,#1a2029)" stroke="#bb6bd9"/><text x="182" y="59" text-anchor="middle" class="sk-sub">T</text>
+              <rect x="52" y="98" width="148" height="34" rx="7" class="sk-accent"/><text x="126" y="120" text-anchor="middle" class="sk-sub">Thread-Bibliothek</text>
+              <line class="sk-line" x1="70" y1="67" x2="120" y2="97"/><line class="sk-line" x1="126" y1="67" x2="126" y2="97"/><line class="sk-line" x1="182" y1="67" x2="132" y2="97"/>
+              <line class="sk-line" x1="126" y1="132" x2="126" y2="215"/>
+              <circle cx="126" cy="235" r="16" fill="#3a3f47" stroke="#5c6672"/><text x="126" y="240" text-anchor="middle" class="sk-sub">P</text>
+            </g>
+
+            <!-- Panel B -->
+            <g>
+              <circle cx="300" cy="55" r="12" fill="color-mix(in srgb,#bb6bd9 40%,#1a2029)" stroke="#bb6bd9"/><text x="300" y="59" text-anchor="middle" class="sk-sub">T</text>
+              <circle cx="360" cy="55" r="12" fill="color-mix(in srgb,#bb6bd9 40%,#1a2029)" stroke="#bb6bd9"/><text x="360" y="59" text-anchor="middle" class="sk-sub">T</text>
+              <circle cx="420" cy="55" r="12" fill="color-mix(in srgb,#bb6bd9 40%,#1a2029)" stroke="#bb6bd9"/><text x="420" y="59" text-anchor="middle" class="sk-sub">T</text>
+              <line class="sk-line" x1="300" y1="67" x2="300" y2="196"/><line class="sk-line" x1="360" y1="67" x2="360" y2="196"/><line class="sk-line" x1="420" y1="67" x2="420" y2="196"/>
+              <circle cx="300" cy="210" r="13" fill="#2a4a63" stroke="#56ccf2"/><text x="300" y="214" text-anchor="middle" class="sk-sub">K</text>
+              <circle cx="360" cy="210" r="13" fill="#2a4a63" stroke="#56ccf2"/><text x="360" y="214" text-anchor="middle" class="sk-sub">K</text>
+              <circle cx="420" cy="210" r="13" fill="#2a4a63" stroke="#56ccf2"/><text x="420" y="214" text-anchor="middle" class="sk-sub">K</text>
+              <line class="sk-line" x1="300" y1="223" x2="355" y2="262"/><line class="sk-line" x1="360" y1="223" x2="360" y2="262"/><line class="sk-line" x1="420" y1="223" x2="365" y2="262"/>
+              <circle cx="360" cy="278" r="16" fill="#3a3f47" stroke="#5c6672"/><text x="360" y="283" text-anchor="middle" class="sk-sub">P</text>
+            </g>
+
+            <!-- Panel C -->
+            <g>
+              <circle cx="533" cy="55" r="12" fill="color-mix(in srgb,#bb6bd9 40%,#1a2029)" stroke="#bb6bd9"/><text x="533" y="59" text-anchor="middle" class="sk-sub">T</text>
+              <circle cx="593" cy="55" r="12" fill="color-mix(in srgb,#bb6bd9 40%,#1a2029)" stroke="#bb6bd9"/><text x="593" y="59" text-anchor="middle" class="sk-sub">T</text>
+              <circle cx="653" cy="55" r="12" fill="color-mix(in srgb,#bb6bd9 40%,#1a2029)" stroke="#bb6bd9"/><text x="653" y="59" text-anchor="middle" class="sk-sub">T</text>
+              <rect x="525" y="98" width="136" height="34" rx="7" class="sk-accent"/><text x="593" y="120" text-anchor="middle" class="sk-sub">Thread-Bibliothek</text>
+              <line class="sk-line" x1="533" y1="67" x2="585" y2="97"/><line class="sk-line" x1="593" y1="67" x2="593" y2="97"/><line class="sk-line" x1="653" y1="67" x2="601" y2="97"/>
+              <line class="sk-line" x1="565" y1="132" x2="560" y2="196"/><line class="sk-line" x1="621" y1="132" x2="626" y2="196"/>
+              <circle cx="560" cy="210" r="13" fill="#2a4a63" stroke="#56ccf2"/><text x="560" y="214" text-anchor="middle" class="sk-sub">K</text>
+              <circle cx="626" cy="210" r="13" fill="#2a4a63" stroke="#56ccf2"/><text x="626" y="214" text-anchor="middle" class="sk-sub">K</text>
+              <line class="sk-line" x1="560" y1="223" x2="590" y2="262"/><line class="sk-line" x1="626" y1="223" x2="596" y2="262"/>
+              <circle cx="593" cy="278" r="16" fill="#3a3f47" stroke="#5c6672"/><text x="593" y="283" text-anchor="middle" class="sk-sub">P</text>
+            </g>
+
+            <!-- Achsen-Beschriftung -->
+            <text x="700" y="150" text-anchor="end" class="sk-faint" font-size="10">Benutzerraum ↑</text>
+            <text x="700" y="200" text-anchor="end" class="sk-faint" font-size="10">Kernel-Raum ↓</text>
+          </svg>
+          <figcaption>T = Benutzer-Thread · K = Kernel-Thread · P = Prozess. (a) Der Kernel sieht nur den Prozess; die Bibliothek verwaltet die Threads. (b) Der Kernel kennt jeden Thread. (c) Mischform.</figcaption>
+        </figure>
+
+        <h3>Benutzer-Threads (Thread-Bibliothek)</h3>
+        <p>
+          Sie sind für das Betriebssystem <strong>unsichtbar</strong>. Eine Thread-Bibliothek
+          wirkt wie ein „Mini-Betriebssystem“ (eigener Scheduler/Dispatcher) innerhalb des
+          Prozesses. Threads verzichten per <strong>„Yield“</strong> freiwillig auf die CPU.
+          Während der Prozess aus BS-Sicht <em>aktiv</em> ist, wechselt der Thread-Scheduler
+          die Threads intern durch.
+        </p>
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Benutzer-Threads: Pro</th><th>Benutzer-Threads: Contra</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>auch für BS ohne Thread-Konzept nutzbar (Bibliothek oberhalb des BS)</td>
+                <td><strong>Blockiert ein Thread</strong> (z.&nbsp;B. <code>receive_from_network()</code>), blockiert der <strong>ganze Prozess</strong> und damit <strong>alle Threads</strong></td>
+              </tr>
+              <tr>
+                <td>kein Übergang in den Kernel-Modus fürs Scheduling → <strong>schneller, billiger</strong></td>
+                <td>1 Prozess = 1 CPU → <strong>Mehrprozessorsysteme nicht effektiv nutzbar</strong></td>
+              </tr>
+              <tr>
+                <td>eigene Scheduling-Strategie pro Anwendung möglich</td>
+                <td>(Abhilfe fürs Blockieren: <strong>„Jacketing“</strong>)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">🧥</div>
+          <div class="callout__body">
+            <p><strong>Jacketing</strong> (Klausurfrage SS 2008!): Ein Verfahren, um das
+            Problem zu lösen, dass ein <strong>blockierender Aufruf</strong> eines
+            Benutzer-Threads den ganzen Prozess blockiert. Dabei wird der potenziell
+            blockierende System-Aufruf durch einen <strong>„Mantel“ (Jacket)</strong>
+            ersetzt: Statt blockierend zu warten, prüft dieser, ob der Aufruf blockieren würde,
+            und gibt in dem Fall die CPU per <strong>Yield</strong> an einen anderen Thread ab
+            (statt den ganzen Prozess zu blockieren).</p>
+          </div>
+        </div>
+
+        <h3>Kernel-Threads</h3>
+        <p>
+          Hier <strong>„sieht“ das Betriebssystem die Threads</strong> und übernimmt auch ihr
+          Scheduling. Threaderzeugung, -kommunikation und -synchronisation sind
+          <strong>Kernel-Aufrufe</strong>.
+        </p>
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Kernel-Threads: Pro</th><th>Kernel-Threads: Contra</th></tr></thead>
+            <tbody>
+              <tr><td>BS kann Threads besser untereinander schedulen</td><td>schwergewichtiger (jedes Mal ein Kernel-Aufruf)</td></tr>
+              <tr><td>BS kann Threads auf <strong>mehrere Prozessoren</strong> verteilen</td><td>Benutzer verliert „Autonomie“ über seine Threads</td></tr>
+              <tr><td>E/A eines Threads blockiert <strong>nicht</strong> alle anderen Threads</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="lead" style="font-size:0.98rem">
+          Sowohl <strong>Windows</strong> als auch <strong>UNIX/Linux</strong> verwenden
+          Kernel-Threads. Windows nutzt zusätzlich Benutzer-Threads („Fibre“-Konzept).
+        </p>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was ist der zentrale Unterschied zwischen Benutzer- und Kernel-Threads?</summary>
+            <div class="answer"><strong>Benutzer-Threads</strong> sind für das BS unsichtbar und
+              werden von einer Thread-Bibliothek im Benutzerraum verwaltet.
+              <strong>Kernel-Threads</strong> sind dem BS bekannt und werden vom BS geschedult.</div>
+          </details>
+          <details class="q">
+            <summary>2. Warum kann ein blockierender Aufruf bei Benutzer-Threads problematisch sein?</summary>
+            <div class="answer">Weil das BS nur den <strong>Prozess</strong> sieht: Blockiert
+              ein Benutzer-Thread (z.&nbsp;B. bei E/A), blockiert der <strong>ganze Prozess</strong>
+              und damit <strong>alle</strong> seine Threads. Abhilfe: <strong>Jacketing</strong>.</div>
+          </details>
+          <details class="q">
+            <summary>3. Welchen entscheidenden Vorteil haben Kernel-Threads auf Mehrprozessorsystemen?</summary>
+            <div class="answer">Das BS kann die Threads eines Prozesses auf <strong>mehrere
+              Prozessoren/Kerne verteilen</strong> und so echte Parallelität erreichen –
+              Benutzer-Threads sind auf „1 Prozess = 1 CPU“ beschränkt.</div>
+          </details>
+          <details class="q">
+            <summary>4. Was ist Jacketing und wozu dient es?</summary>
+            <div class="answer">Ein Verfahren bei Benutzer-Threads, das verhindert, dass ein
+              blockierender Aufruf den ganzen Prozess blockiert: Der Aufruf wird „ummantelt“ und
+              prüft vorab, ob er blockieren würde; falls ja, gibt er per <strong>Yield</strong> an
+              einen anderen Thread ab, statt zu blockieren.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 4 -->
+      <section class="module" id="modul-4">
+        <div class="module__head">
+          <div class="module__num">4</div>
+          <h2>Hyperthreading &amp; Multicore</h2>
+        </div>
+
+        <p class="lead">
+          Hyperthreading und Multicore sind <strong>Hardware-Technologien</strong>, die
+          Threading besonders gut unterstützen, indem sie mehrere „virtuelle CPUs“ bereitstellen.
+        </p>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Technologie</th><th>Was ist separat / gemeinsam?</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Hyperthreading<br><span class="sk-sub">(Multithreading-CPU)</span></td>
+                <td><strong>separat:</strong> mehrere Registersätze, mehrere Programmzähler ·
+                    <strong>gemeinsam:</strong> der Cache (und das Rechenwerk)</td>
+              </tr>
+              <tr>
+                <td>Multi-Core</td>
+                <td>zusätzlich <strong>separat:</strong> eigene L1-Caches, eigene Rechenwerke ·
+                    <strong>gemeinsam:</strong> weitere (höhere) Caches</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Beide simulieren mehrere <strong>„virtuelle CPUs“</strong> und erlauben einen höheren
+          Grad an <strong>echter Parallelität</strong> als eine Standard-CPU.
+        </p>
+
+        <div class="callout callout--merke">
+          <div class="cico">⚡</div>
+          <div class="callout__body">
+            <p><strong>Warum passen HW-Threads und Kernel-Threads ideal zusammen?</strong></p>
+            <p>1) Die (Kernel-)Threads sind dem <strong>Betriebssystem bekannt</strong> → das BS
+            kann die Software-Threads gezielt den Hardware-Threads (virtuellen CPUs) zuordnen.</p>
+            <p>2) Die Threads arbeiten auf <strong>gemeinsamen Anwendungsdaten</strong> → der
+            <strong>gemeinsame CPU-Cache</strong> wird optimal genutzt (die Daten liegen schon
+            im Cache, den sich die HW-Threads teilen).</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was hat eine Hyperthreading-CPU separat, was gemeinsam?</summary>
+            <div class="answer"><strong>Separat:</strong> mehrere Registersätze und
+              Programmzähler. <strong>Gemeinsam:</strong> der Cache (und das Rechenwerk).
+              Multi-Core hat zusätzlich separate L1-Caches und Rechenwerke.</div>
+          </details>
+          <details class="q">
+            <summary>2. Warum eignen sich Hyperthreading/Multicore ideal für Kernel-Threads?</summary>
+            <div class="answer">Weil die Threads dem <strong>BS bekannt</strong> sind (es kann sie
+              den virtuellen CPUs zuordnen) und weil sie auf <strong>gemeinsamen Daten</strong>
+              arbeiten, wodurch der <strong>gemeinsame Cache</strong> optimal genutzt wird.</div>
+          </details>
+          <details class="q">
+            <summary>3. Was simulieren Hyperthreading- und Multicore-CPUs?</summary>
+            <div class="answer">Mehrere <strong>„virtuelle CPUs“</strong>, die einen höheren Grad
+              an Parallelität als eine einzelne Standard-CPU ermöglichen.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 5 -->
+      <section class="module" id="modul-5">
+        <div class="module__head">
+          <div class="module__num">5</div>
+          <h2>Altklausurfragen</h2>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">📝</div>
+          <div class="callout__body">
+            <p>Das Thema Threads wurde vor allem in der <strong>Klausur SS 2008 (Aufgabe 1)</strong>
+            gefragt – kompakt und fast vollständig abgedeckt. Hier die echten Aufgaben mit Lösungen.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">★</span><h3>Aus echten Klausuren</h3><span class="count">5 Aufgaben</span>
+          </div>
+
+          <details class="q">
+            <summary>1. Was sind Vor- und Nachteile der Verwendung von Threads (im Gegensatz zu Prozessen) für nebenläufige Aufgaben?</summary>
+            <div class="answer">
+              <strong>Vorteile:</strong> Threads sind <em>billiger</em> (weniger CPU-Zeit zum
+              Erzeugen/Terminieren, schnelleres Scheduling) und können direkt auf
+              <em>gemeinsamen Daten</em> arbeiten (Prozesse bräuchten teure IPC).
+              <strong>Nachteil:</strong> Verlust der Schutzmechanismen – ein Thread kann bei
+              falscher Programmierung einen anderen stören; unsynchronisierter Zugriff auf
+              gemeinsame Variablen führt zu undefinierten Werten.
+              <span class="q-src">Quelle: Klausur SS 2008, Aufgabe 1a</span></div>
+          </details>
+
+          <details class="q">
+            <summary>2. Was sind Vor- und Nachteile von Benutzerthreads im Vergleich zu Kernelthreads?</summary>
+            <div class="answer">
+              <strong>Benutzer-Threads – Vorteile:</strong> nutzbar auch auf BS ohne Thread-Konzept;
+              kein Kernel-Übergang fürs Scheduling → schneller/billiger; eigene Scheduling-Strategie
+              pro Anwendung. <strong>Nachteile:</strong> ein blockierender Aufruf blockiert den
+              ganzen Prozess (alle Threads); Mehrprozessorsysteme nicht effektiv nutzbar
+              (1 Prozess = 1 CPU).
+              <br><strong>Kernel-Threads – Vorteile:</strong> besseres Scheduling, Verteilung auf
+              mehrere Prozessoren, E/A eines Threads blockiert nicht die anderen.
+              <strong>Nachteile:</strong> schwergewichtiger (Kernel-Aufrufe), Benutzer verliert
+              Autonomie über seine Threads.
+              <span class="q-src">Quelle: Klausur SS 2008, Aufgabe 1b</span></div>
+          </details>
+
+          <details class="q">
+            <summary>3. Wozu wird das „Jacketing“-Verfahren eingesetzt und wie funktioniert es?</summary>
+            <div class="answer">
+              <strong>Zweck:</strong> Es löst bei <em>Benutzer-Threads</em> das Problem, dass ein
+              blockierender System-Aufruf eines Threads den <strong>ganzen Prozess</strong> (und
+              damit alle Threads) blockiert. <strong>Funktionsweise:</strong> Der potenziell
+              blockierende Aufruf wird durch einen „Mantel“ (Jacket) ersetzt, der vorab
+              <strong>prüft, ob der Aufruf blockieren würde</strong>. Falls ja, blockiert er nicht,
+              sondern gibt per <strong>Yield</strong> die CPU an einen anderen Thread der
+              Thread-Bibliothek ab.
+              <span class="q-src">Quelle: Klausur SS 2008, Aufgabe 1c</span></div>
+          </details>
+
+          <details class="q">
+            <summary>4. Was passiert bei einem Prozesswechsel? (Threads/Prozesse – siehe auch Kap. 3)</summary>
+            <div class="answer">
+              Ab dem Dispatcher: <strong>Zustand von P1 sichern</strong> (Programmzähler, alle
+              Datenregister + PSW in den PCB), <strong>Zustand von P2 laden</strong> (Register &amp;
+              PC aus dessen PCB), dann <strong>P2 fortsetzen</strong>. Bei Threads desselben
+              Prozesses ist der Wechsel billiger (Adressraum/Betriebsmittel bleiben gleich).
+              <span class="q-src">Quelle: Klausur SS 2008, Aufgabe 1d (vgl. Kapitel 3)</span></div>
+          </details>
+
+          <details class="q">
+            <summary>5. Was ist die Voraussetzung, damit eine Anwendung eine Hyperthreading- oder Multi-Core-CPU effizient nutzen kann?</summary>
+            <div class="answer">
+              Die Anwendung muss <strong>nebenläufig (mehrfädig) programmiert</strong> sein – d.&nbsp;h.
+              aus <strong>mehreren Threads</strong> bestehen, die parallel arbeiten können. Nur dann
+              kann das BS die Threads gleichzeitig auf die verschiedenen (virtuellen) CPUs verteilen.
+              Ein rein sequentielles Ein-Thread-Programm nutzt immer nur eine (virtuelle) CPU.
+              <span class="q-src">Quelle: Klausur SS 2008, Aufgabe 1e</span></div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Kapitel-Navigation -->
+      <nav class="chapter-nav">
+        <a class="prev" href="kapitel-04.html">
+          <span class="dir">← Vorheriges</span>
+          <span class="ttl">4 · Scheduling</span>
+        </a>
+        <a class="next" href="kapitel-06.html">
+          <span class="dir">Nächstes →</span>
+          <span class="ttl">6 · Synchronisation</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="js/chapter.js"></script>
+</body>
+</html>
