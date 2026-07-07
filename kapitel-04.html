@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kapitel 4 · Scheduling · Betriebssysteme</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/chapter.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>" />
+</head>
+<body class="chapter" style="--chapter-accent:#eb5757;">
+  <div class="progress"></div>
+
+  <!-- ============================================================ TOPBAR -->
+  <div class="topbar">
+    <div class="topbar__inner">
+      <a class="home" href="index.html">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg>
+        Hub
+      </a>
+      <span class="crumb">Kapitel 04 · <b>Scheduling</b></span>
+      <span class="spacer"></span>
+      <a class="pdf-link" href="Themen/OS_4_Scheduling.pdf" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Skript-PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- ============================================================ LAYOUT -->
+  <div class="chapter-layout">
+
+    <!-- Inhaltsverzeichnis -->
+    <nav class="toc">
+      <div class="toc-title">Module</div>
+      <ol>
+        <li><a href="#modul-1"><span class="mod-num">1</span>Der Scheduler</a></li>
+        <li><a href="#modul-2"><span class="mod-num">2</span>Ziele &amp; Zielkonflikte</a></li>
+        <li><a href="#modul-3"><span class="mod-num">3</span>Klassische Verfahren</a></li>
+        <li><a href="#modul-4"><span class="mod-num">4</span>Echtzeit: EDF</a></li>
+        <li><a href="#modul-5"><span class="mod-num">5</span>Echtzeit: RMS &amp; Rechnung</a></li>
+        <li><a href="#modul-6"><span class="mod-num">6</span>Altklausurfragen</a></li>
+      </ol>
+    </nav>
+
+    <!-- Hauptinhalt -->
+    <main class="content">
+
+      <!-- Kapitel-Kopf -->
+      <header class="chapter-hero">
+        <div class="kicker"><span class="ico">📊</span> Kapitel 04</div>
+        <h1>Scheduling</h1>
+        <p class="intro">
+          <strong>Das</strong> Klausur-Kernthema. Der Scheduler entscheidet, welcher
+          Prozess als Nächstes die CPU bekommt. Wir behandeln die Ziele, die klassischen
+          Verfahren (FCFS, SJF, Round Robin, Prioritäten) und – am wichtigsten für die
+          Klausur – das <strong>Echtzeit-Scheduling mit EDF und RMS</strong> samt der
+          <strong>RMS-Auslastungsrechnung</strong>.
+        </p>
+
+        <div class="goals">
+          <h4>Nach diesem Kapitel kannst du …</h4>
+          <ul>
+            <li>die Aufgaben des Schedulers und seine Kosten erklären</li>
+            <li>mindestens sechs Scheduling-Ziele nennen und Zielkonflikte begründen</li>
+            <li>FCFS, SJF/SRT, Prioritäten und Round Robin unterscheiden und bewerten</li>
+            <li>ein EDF- und ein RMS-Zeitdiagramm zeichnen</li>
+            <li>die notwendige &amp; hinreichende RMS-Bedingung berechnen und interpretieren</li>
+          </ul>
+        </div>
+      </header>
+
+      <!-- =================================================== MODUL 1 -->
+      <section class="module" id="modul-1">
+        <div class="module__head">
+          <div class="module__num">1</div>
+          <h2>Der Scheduler</h2>
+        </div>
+
+        <p class="lead">
+          Der <strong>Scheduler</strong> ist die Komponente, die bestimmt,
+          <em>welcher Prozess als Nächstes die CPU erhält</em>. Er verwaltet dazu die
+          rechenbereiten Prozesse in der <strong>Ready Queue</strong>.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 340" role="img" aria-label="Scheduler mit Ready Queue und Blocked Queue">
+            <!-- CPU -->
+            <rect class="sk-box" x="560" y="30" width="120" height="52" rx="9"/>
+            <text class="sk-label" x="620" y="62" text-anchor="middle">CPU</text>
+
+            <!-- Ready Queue -->
+            <text class="sk-faint" x="120" y="60" text-anchor="middle">Ready Queue</text>
+            <text class="sk-sub" x="120" y="78" text-anchor="middle">rechenbereite Prozesse</text>
+            <g>
+              <rect class="sk-box" x="40" y="90" width="34" height="34" rx="4"/>
+              <rect class="sk-box" x="76" y="90" width="34" height="34" rx="4"/>
+              <rect class="sk-box" x="112" y="90" width="34" height="34" rx="4"/>
+              <rect class="sk-box" x="148" y="90" width="34" height="34" rx="4"/>
+            </g>
+
+            <!-- Zustände -->
+            <ellipse cx="330" cy="180" rx="66" ry="32" fill="color-mix(in srgb,#f2994a 32%,#1a2029)" stroke="#f2994a" stroke-width="1.5"/>
+            <text class="sk-label" x="330" y="186" text-anchor="middle">Bereit</text>
+
+            <ellipse cx="560" cy="180" rx="66" ry="32" fill="color-mix(in srgb,#27ae60 32%,#1a2029)" stroke="#27ae60" stroke-width="1.5"/>
+            <text class="sk-label" x="560" y="186" text-anchor="middle">Aktiv</text>
+
+            <ellipse cx="445" cy="300" rx="66" ry="30" fill="color-mix(in srgb,#eb5757 32%,#1a2029)" stroke="#eb5757" stroke-width="1.5"/>
+            <text class="sk-label" x="445" y="306" text-anchor="middle">Blockiert</text>
+
+            <!-- Ready Queue -> Bereit -->
+            <path class="sk-arrow" d="M182 107 C240 120, 250 150, 285 165" marker-end="url(#s-arr)"/>
+            <!-- CPU -> Aktiv -->
+            <line class="sk-line" x1="620" y1="82" x2="590" y2="150" stroke-dasharray="4 3"/>
+            <!-- Bereit -> Aktiv (Zuteilung durch Scheduler) -->
+            <path class="sk-arrow" d="M396 172 L492 172" marker-end="url(#s-arr)"/>
+            <text class="sk-label" x="444" y="160" text-anchor="middle" fill="#eb5757" font-size="13">Scheduler</text>
+            <!-- Aktiv -> Bereit (Verdrängung) -->
+            <path class="sk-arrow" d="M492 192 L396 192" marker-end="url(#s-arr)"/>
+            <!-- Aktiv -> Blockiert -->
+            <path class="sk-arrow" d="M540 210 L480 275" marker-end="url(#s-arr)"/>
+            <!-- Blockiert -> Bereit -->
+            <path class="sk-arrow" d="M385 285 L350 212" marker-end="url(#s-arr)"/>
+
+            <defs>
+              <marker id="s-arr" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#c9d1d9"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>Der Scheduler wählt aus der Ready Queue den nächsten Prozess für die CPU. Bei einer Verdrängung wandert der aktive Prozess zurück in die Ready Queue.</figcaption>
+        </figure>
+
+        <h3>Wann entscheidet der Scheduler?</h3>
+        <p>Der Scheduler ist der „Schiedsrichter“ und wird in vier Situationen aktiv:</p>
+        <ul>
+          <li>wenn ein <strong>aktiver Prozess blockiert</strong> (dann muss ein bereiter gewählt werden)</li>
+          <li>wenn ein Prozess schon <strong>länger die CPU hat</strong> (zyklische Prüfung, z.&nbsp;B. alle 100&nbsp;ms → evtl. Verdrängung)</li>
+          <li>wenn ein <strong>neuer Prozess dazukommt</strong> (soll der laufende verdrängt werden?)</li>
+          <li>wenn ein <strong>blockierter Prozess wieder bereit</strong> wird (soll der laufende verdrängt werden?)</li>
+        </ul>
+
+        <div class="callout callout--merke">
+          <div class="cico">💸</div>
+          <div class="callout__body">
+            <p><strong>Scheduling ist nicht gratis.</strong> Das Bestimmen eines Kandidaten
+            und die Verwaltung der Queues kostet Rechenzeit (je komplexer die Strategie,
+            desto teurer). Und jeder <strong>Prozesswechsel</strong> kostet extra: Übergang
+            in den Kernel Mode, Sichern/Laden des Kontextes und <strong>Verlust der
+            Cache-Inhalte</strong>. → Scheduling-Strategien müssen sorgfältig gewählt werden.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was ist die Aufgabe des Schedulers?</summary>
+            <div class="answer">Er bestimmt, <strong>welcher (bereite) Prozess als Nächstes
+              die CPU erhält</strong>, und verwaltet dazu die Ready Queue.</div>
+          </details>
+          <details class="q">
+            <summary>2. Nenne die Situationen, in denen der Scheduler aktiv wird.</summary>
+            <div class="answer">Wenn ein aktiver Prozess <strong>blockiert</strong>, wenn ein
+              Prozess schon <strong>lange die CPU hat</strong> (zyklische Prüfung), wenn ein
+              <strong>neuer Prozess</strong> dazukommt und wenn ein <strong>blockierter
+              Prozess wieder bereit</strong> wird.</div>
+          </details>
+          <details class="q">
+            <summary>3. Warum ist häufiges Scheduling / häufiger Prozesswechsel teuer?</summary>
+            <div class="answer">Kandidatenwahl und Queue-Verwaltung kosten Rechenzeit; jeder
+              Prozesswechsel erfordert Kernel-Mode-Übergang, Sichern/Laden des Kontextes und
+              führt zum <strong>Verlust der Cache-Inhalte</strong> (der neue Prozess muss den
+              Cache neu aufbauen).</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 2 -->
+      <section class="module" id="modul-2">
+        <div class="module__head">
+          <div class="module__num">2</div>
+          <h2>Ziele &amp; Zielkonflikte</h2>
+        </div>
+
+        <p class="lead">
+          Ein Scheduler hat es schwer, weil er <strong>viele Ziele gleichzeitig</strong>
+          verfolgen soll – und einige davon widersprechen sich. Diese Ziele (mindestens
+          sechs) sind eine <strong>häufige Klausurfrage</strong>.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 440" role="img" aria-label="Scheduling-Ziele mit Zielkonflikt">
+            <!-- Zentrum -->
+            <circle cx="360" cy="220" r="26" fill="#eb5757"/>
+            <text class="sk-sub" x="360" y="224" text-anchor="middle" fill="#fff" font-size="11">Scheduler</text>
+
+            <!-- Speichen -->
+            <line class="sk-line" x1="360" y1="220" x2="360" y2="70"/>
+            <line class="sk-line" x1="360" y1="220" x2="150" y2="120"/>
+            <line class="sk-line" x1="360" y1="220" x2="120" y2="220"/>
+            <line class="sk-line" x1="360" y1="220" x2="150" y2="330"/>
+            <line class="sk-line" x1="360" y1="220" x2="360" y2="380"/>
+            <line class="sk-line" x1="360" y1="220" x2="570" y2="330"/>
+            <line class="sk-line" x1="360" y1="220" x2="600" y2="220"/>
+            <line class="sk-line" x1="360" y1="220" x2="570" y2="120"/>
+
+            <!-- Ziel-Knoten -->
+            <g>
+              <rect class="sk-box" x="300" y="44" width="120" height="42" rx="21"/>
+              <text class="sk-sub" x="360" y="70" text-anchor="middle">Stabilität</text>
+
+              <rect class="sk-box" x="70" y="98" width="130" height="42" rx="21"/>
+              <text class="sk-sub" x="135" y="118" text-anchor="middle">Prozessor-</text>
+              <text class="sk-sub" x="135" y="132" text-anchor="middle">auslastung</text>
+
+              <rect class="sk-accent" x="40" y="198" width="130" height="44" rx="22"/>
+              <text class="sk-sub" x="105" y="218" text-anchor="middle">Hoher</text>
+              <text class="sk-sub" x="105" y="232" text-anchor="middle">Durchsatz</text>
+
+              <rect class="sk-box" x="70" y="308" width="130" height="42" rx="21"/>
+              <text class="sk-sub" x="135" y="334" text-anchor="middle">Fairness</text>
+
+              <rect class="sk-box" x="290" y="360" width="140" height="42" rx="21"/>
+              <text class="sk-sub" x="360" y="386" text-anchor="middle">Kein Verhungern</text>
+
+              <rect class="sk-box" x="520" y="308" width="140" height="42" rx="21"/>
+              <text class="sk-sub" x="590" y="334" text-anchor="middle">Kein Verhungern</text>
+
+              <rect class="sk-accent" x="530" y="198" width="150" height="44" rx="22"/>
+              <text class="sk-sub" x="605" y="218" text-anchor="middle">Kurze</text>
+              <text class="sk-sub" x="605" y="232" text-anchor="middle">Antwortzeit</text>
+
+              <rect class="sk-box" x="520" y="98" width="150" height="42" rx="21"/>
+              <text class="sk-sub" x="595" y="118" text-anchor="middle">Rechtzeitige</text>
+              <text class="sk-sub" x="595" y="132" text-anchor="middle">Reaktion</text>
+            </g>
+
+            <!-- Konfliktkante hervorgehoben -->
+            <path d="M170 220 C300 265, 460 265, 530 220" fill="none" stroke="#eb5757" stroke-width="2.5" stroke-dasharray="6 4"/>
+            <text class="sk-label" x="360" y="285" text-anchor="middle" fill="#eb5757" font-size="12.5">Konflikt: Durchsatz ↔ Antwortzeit</text>
+          </svg>
+          <figcaption>Die wichtigsten Scheduling-Ziele. Rot: ein typischer Zielkonflikt zwischen hohem Durchsatz und kurzer Antwortzeit.</figcaption>
+        </figure>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Ziel</th><th>Bedeutung</th></tr></thead>
+            <tbody>
+              <tr><td>Prozessorauslastung</td><td>CPU möglichst nie „idle“</td></tr>
+              <tr><td>Hoher Durchsatz</td><td>möglichst viele Aufgaben pro Zeiteinheit</td></tr>
+              <tr><td>Kurze Antwortzeit</td><td>interaktive Nutzer wollen schnelle Reaktion</td></tr>
+              <tr><td>Fairness</td><td>im Durchschnitt gleiche CPU-Anteile</td></tr>
+              <tr><td>Kein Verhungern</td><td>kein Prozess, der „immer den Kürzeren zieht“</td></tr>
+              <tr><td>Rechtzeitige Reaktion</td><td>garantierte Einhaltung von Terminen (Deadlines)</td></tr>
+              <tr><td>Stabilität</td><td>Wohlverhalten im Überlast-Fall</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout--note">
+          <div class="cico">⚔️</div>
+          <div class="callout__body">
+            <p><strong>Beispiel Zielkonflikt:</strong> <em>Hoher Durchsatz</em> will lange
+            Prozesse ohne Unterbrechung durchrechnen (wenige teure Wechsel). <em>Kurze
+            Antwortzeit</em> verlangt aber häufiges Umschalten, damit jeder interaktive
+            Prozess schnell drankommt. Beides gleichzeitig maximal zu erfüllen geht nicht.
+            Ein weiterer Konflikt: <em>Fairness ↔ rechtzeitige Reaktion</em>.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">2 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Nenne sechs Ziele, die ein Scheduler berücksichtigen muss.</summary>
+            <div class="answer">Prozessorauslastung, hoher Durchsatz, kurze Antwortzeit,
+              Fairness, kein Verhungern, rechtzeitige Reaktion (Deadlines), Stabilität
+              (Überlastverhalten). <em>(Sechs davon genügen.)</em></div>
+          </details>
+          <details class="q">
+            <summary>2. Gib ein Beispiel für einen Zielkonflikt und begründe ihn.</summary>
+            <div class="answer"><strong>Durchsatz ↔ Antwortzeit:</strong> Hoher Durchsatz will
+              wenige (teure) Prozesswechsel und lange Rechenphasen; kurze Antwortzeit will
+              häufiges Umschalten, damit interaktive Prozesse schnell reagieren. Häufigere
+              Wechsel senken den Durchsatz (mehr Overhead) – beides zugleich maximal geht nicht.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 3 -->
+      <section class="module" id="modul-3">
+        <div class="module__head">
+          <div class="module__num">3</div>
+          <h2>Klassische Scheduling-Verfahren</h2>
+        </div>
+
+        <p class="lead">
+          Fünf grundlegende Verfahren solltest du benennen und in 1–2 Sätzen beschreiben
+          können (häufige Klausurfrage).
+        </p>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Verfahren</th><th>Regel</th><th>Bewertung</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>FCFS<br><span class="sk-sub">First Come First Serve</span></td>
+                <td>Gib die CPU dem Prozess, der <strong>am längsten</strong> in der Ready Queue ist. Keine Verdrängung.</td>
+                <td>+ einfach, fair, kein Verhungern<br>− schlechte Antwortzeiten</td>
+              </tr>
+              <tr>
+                <td>SJF<br><span class="sk-sub">Shortest Job First</span></td>
+                <td>Gib die CPU dem Prozess mit der <strong>geringsten Bearbeitungszeit</strong>. Mit oder ohne Verdrängung.</td>
+                <td>+ optimale mittlere Wartezeit<br>− nicht fair, Verhungern, Zeit muss bekannt sein</td>
+              </tr>
+              <tr>
+                <td>SRT<br><span class="sk-sub">Shortest Remaining Time</span></td>
+                <td>Variante von SJF mit <strong>Restlaufzeit</strong>; neue kurze Jobs verdrängen längere.</td>
+                <td>+ noch bessere mittlere Wartezeit<br>− nicht fair, Verhungern langer Jobs</td>
+              </tr>
+              <tr>
+                <td>Prioritäten</td>
+                <td>Höchste Priorität zuerst; verdränge niedrigere; innerhalb gleicher Prio nach FCFS/SJF.</td>
+                <td>+ gute Antwortzeiten<br>− Verhungern niedriger Prioritäten</td>
+              </tr>
+              <tr>
+                <td>Round Robin</td>
+                <td>Jeder Prozess bekommt reihum ein <strong>Quantum</strong> (Zeitscheibe); danach Verdrängung.</td>
+                <td>+ fair, kein Verhungern<br>− Verdrängung erzeugt Overhead</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Round Robin im Zeitdiagramm</h3>
+        <p>
+          Bei <strong>Round Robin</strong> teilen sich die Prozesse die CPU reihum in
+          Zeitscheiben. Zwischen zwei Prozessen läuft jeweils kurz der Scheduler. Ein
+          <strong>kleines Quantum</strong> bedeutet mehr Fairness, ein <strong>großes
+          Quantum</strong> mehr Effizienz (weniger Wechsel). Typische Werte: 10–100&nbsp;ms.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 250" role="img" aria-label="Round Robin Zeitdiagramm">
+            <!-- Achsen-Beschriftung links -->
+            <text class="sk-sub" x="80" y="45" text-anchor="end">Prozess 1</text>
+            <text class="sk-sub" x="80" y="95" text-anchor="end">Prozess 2</text>
+            <text class="sk-sub" x="80" y="145" text-anchor="end">Prozess 3</text>
+            <text class="sk-sub" x="80" y="195" text-anchor="end">Scheduler</text>
+
+            <!-- Zeitachse -->
+            <line class="sk-line" x1="100" y1="215" x2="700" y2="215"/>
+            <text class="sk-faint" x="400" y="238" text-anchor="middle">Zeit →</text>
+
+            <!-- Zeitscheiben (Prozesse abwechselnd, Scheduler dazwischen) -->
+            <!-- P1 -->
+            <rect x="100" y="34" width="70" height="14" rx="3" fill="#5b8cff"/>
+            <rect x="340" y="34" width="70" height="14" rx="3" fill="#5b8cff"/>
+            <rect x="580" y="34" width="70" height="14" rx="3" fill="#5b8cff"/>
+            <!-- P2 -->
+            <rect x="180" y="84" width="70" height="14" rx="3" fill="#f2994a"/>
+            <rect x="420" y="84" width="70" height="14" rx="3" fill="#f2994a"/>
+            <rect x="660" y="84" width="40" height="14" rx="3" fill="#f2994a"/>
+            <!-- P3 -->
+            <rect x="260" y="134" width="70" height="14" rx="3" fill="#bb6bd9"/>
+            <rect x="500" y="134" width="70" height="14" rx="3" fill="#bb6bd9"/>
+            <!-- Scheduler-Balken -->
+            <g fill="#eb5757">
+              <rect x="172" y="184" width="6" height="14"/>
+              <rect x="252" y="184" width="6" height="14"/>
+              <rect x="332" y="184" width="6" height="14"/>
+              <rect x="412" y="184" width="6" height="14"/>
+              <rect x="492" y="184" width="6" height="14"/>
+              <rect x="572" y="184" width="6" height="14"/>
+              <rect x="652" y="184" width="6" height="14"/>
+            </g>
+            <text class="sk-faint" x="400" y="120" text-anchor="middle">je ein Quantum reihum · dazwischen kurz der Scheduler</text>
+          </svg>
+          <figcaption>Round Robin: P1 → P2 → P3 → P1 → … Jeder bekommt reihum eine Zeitscheibe, zwischendurch schaltet der Scheduler um.</figcaption>
+        </figure>
+
+        <div class="callout callout--exam">
+          <div class="cico">⚠️</div>
+          <div class="callout__body">
+            <p><strong>Prioritätsinvertierung</strong> (Klausurfrage WS 2019/20!): Ein
+            hochpriorer Prozess <strong>A</strong> wartet auf ein Betriebsmittel, das ein
+            niedrigpriorer Prozess <strong>C</strong> hält. C kommt aber nicht dran, weil ein
+            mittelpriorer Langläufer <strong>B</strong> die CPU belegt. Ergebnis:
+            <strong>A</strong> kommt trotz höchster Priorität nicht voran – die Prioritäten
+            sind faktisch „invertiert“.</p>
+            <p><strong>Lösung (Priority Boost):</strong> Der niedrigpriore C (bzw. ein zu lange
+            wartender Prozess) bekommt vorübergehend eine <strong>höhere Priorität</strong>,
+            gibt das Betriebsmittel schnell frei, und A kann fortfahren. Windows XP z.&nbsp;B.
+            hebt einen &gt;4&nbsp;s wartenden Prozess für zwei Zeitscheiben auf Maximalpriorität.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was bedeutet „Verdrängung“ (Preemption)?</summary>
+            <div class="answer">Einem <strong>aktiven</strong> Prozess wird die CPU
+              <strong>weggenommen</strong>, um sie einem anderen <strong>bereiten</strong>
+              Prozess zuzuordnen – obwohl der aktive noch weiterrechnen könnte
+              (Übergang Aktiv → Bereit).</div>
+          </details>
+          <details class="q">
+            <summary>2. Nenne drei Ereignisse, bei denen eine Verdrängung stattfinden kann.</summary>
+            <div class="answer">Ein <strong>neuer Prozess</strong> mit höherer Priorität/kürzerer
+              Deadline kommt dazu; ein <strong>blockierter Prozess wird wieder bereit</strong> und
+              hat höhere Priorität; die <strong>Zeitscheibe (Quantum)</strong> des laufenden
+              Prozesses ist abgelaufen (Round Robin).</div>
+          </details>
+          <details class="q">
+            <summary>3. Was ist der Nachteil von SJF und wie begegnet man ihm in der Praxis?</summary>
+            <div class="answer">Die Bearbeitungszeit ist i.&nbsp;d.&nbsp;R. <strong>vorab nicht
+              bekannt</strong>; außerdem ist SJF nicht fair (Verhungern langer Jobs möglich). In
+              der Praxis <strong>schätzt</strong> man die Bearbeitungszeit über ein
+              <strong>Monitoring der Prozess-Historie</strong>.</div>
+          </details>
+          <details class="q">
+            <summary>4. Wie wirkt sich die Quantum-Größe bei Round Robin aus?</summary>
+            <div class="answer"><strong>Kleines Quantum:</strong> mehr Fairness, aber mehr
+              (teure) Prozesswechsel. <strong>Großes Quantum:</strong> mehr Effizienz, aber
+              schlechtere Fairness/Antwortzeit. Die Effizienz hängt von der Anzahl der
+              Prozesswechsel ab.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 4 -->
+      <section class="module" id="modul-4">
+        <div class="module__head">
+          <div class="module__num">4</div>
+          <h2>Echtzeit-Scheduling: EDF</h2>
+        </div>
+
+        <p class="lead">
+          Bei <strong>Echtzeit</strong> zählt nicht „möglichst schnell“, sondern
+          <strong>rechtzeitig</strong>. Aktionen müssen bis zu festgelegten
+          <strong>Deadlines</strong> fertig sein.
+        </p>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Echtzeit-Art</th><th>Bei Verletzung der Rechtzeitigkeit</th></tr></thead>
+            <tbody>
+              <tr><td>Weiche Echtzeit</td><td>verminderter Nutzen (z.&nbsp;B. ruckelndes Video)</td></tr>
+              <tr><td>Harte Echtzeit</td><td>kritischer Schaden (z.&nbsp;B. Airbag, Bremssteuerung)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Das Modell einer Echtzeit-Task</h3>
+        <figure class="sketch">
+          <svg viewBox="0 0 720 220" role="img" aria-label="Modell einer Echtzeittask">
+            <line class="sk-line" x1="40" y1="120" x2="700" y2="120"/>
+            <!-- Anforderung -->
+            <line x1="120" y1="70" x2="120" y2="150" stroke="#c9d1d9" stroke-width="2"/>
+            <text class="sk-faint" x="120" y="170" text-anchor="middle">Anforderung</text>
+            <text class="sk-faint" x="120" y="186" text-anchor="middle">(kommt in Ready Queue)</text>
+            <!-- Startzeit -->
+            <line x1="240" y1="95" x2="240" y2="145" stroke="#c9d1d9" stroke-width="1.5"/>
+            <text class="sk-faint" x="240" y="200" text-anchor="middle">Start</text>
+            <!-- Task-Block (Ausführungszeit) -->
+            <rect x="240" y="100" width="220" height="40" rx="5" fill="color-mix(in srgb,#eb5757 45%,#1a2029)" stroke="#eb5757"/>
+            <text class="sk-label" x="350" y="124" text-anchor="middle">Task Tᵢ</text>
+            <text class="sk-faint" x="350" y="90" text-anchor="middle">Ausführungszeit C</text>
+            <!-- Ende -->
+            <line x1="460" y1="95" x2="460" y2="145" stroke="#c9d1d9" stroke-width="1.5"/>
+            <text class="sk-faint" x="460" y="200" text-anchor="middle">Ende</text>
+            <!-- Laxity -->
+            <path d="M460 80 L600 80" stroke="#56ccf2" stroke-width="1.5" marker-end="url(#lax)" marker-start="url(#lax)"/>
+            <text class="sk-faint" x="530" y="72" text-anchor="middle" fill="#56ccf2">Spielraum (Laxity)</text>
+            <!-- Deadline -->
+            <line x1="600" y1="70" x2="600" y2="150" stroke="#eb5757" stroke-width="2"/>
+            <text class="sk-faint" x="600" y="170" text-anchor="middle" fill="#eb5757">Deadline (D)</text>
+            <text class="sk-faint" x="600" y="186" text-anchor="middle" fill="#eb5757">spätestes Ende</text>
+            <defs>
+              <marker id="lax" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,4 L8,4" stroke="#56ccf2" stroke-width="1.5"/><path d="M2,2 L0,4 L2,6" fill="none" stroke="#56ccf2"/></marker>
+            </defs>
+          </svg>
+          <figcaption>Kenngrößen einer Echtzeit-Task: Anforderungszeit, Startzeit, Ausführungszeit C, Endzeit, Deadline D und der Spielraum (Laxity). <strong>Periodische</strong> Tasks wiederholen sich mit Periode P; <strong>aperiodische</strong> sind ereignisgesteuert.</figcaption>
+        </figure>
+
+        <h3>Earliest Deadline First (EDF)</h3>
+        <div class="callout callout--merke">
+          <div class="cico">📏</div>
+          <div class="callout__body">
+            <p><strong>EDF-Regel:</strong> Gib die CPU dem Prozess, der die
+            <strong>nächste (früheste) Deadline</strong> hat; verdränge dabei ggf. den
+            gerade laufenden Prozess.</p>
+            <p>EDF ist <strong>dynamisch, mit Verdrängung, mit dynamischen Prioritäten</strong>
+            und für aperiodische wie periodische Tasks geeignet.</p>
+          </div>
+        </div>
+
+        <p>
+          <strong>Beispiel.</strong> Drei Tasks: A (Anforderung 0, Ausführung 4, Deadline 13),
+          B (Anforderung 2, Ausführung 2, Deadline 6), C (Anforderung 5, Ausführung 2,
+          Deadline 9). EDF wählt immer die früheste Deadline:
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 210" role="img" aria-label="EDF Zeitdiagramm Beispiel">
+            <!-- CPU-Zeile -->
+            <text class="sk-sub" x="55" y="60" text-anchor="end">CPU</text>
+            <!-- Blöcke: A[0-2] B[2-4] A[4-5] C[5-7] A[7-8], unit=42px, x0=70 -->
+            <rect x="70"  y="42" width="84" height="36" rx="4" fill="#5b8cff"/><text x="112" y="65" text-anchor="middle" class="sk-label">A</text>
+            <rect x="154" y="42" width="84" height="36" rx="4" fill="#f2994a"/><text x="196" y="65" text-anchor="middle" class="sk-label">B</text>
+            <rect x="238" y="42" width="42" height="36" rx="4" fill="#5b8cff"/><text x="259" y="65" text-anchor="middle" class="sk-label">A</text>
+            <rect x="280" y="42" width="84" height="36" rx="4" fill="#bb6bd9"/><text x="322" y="65" text-anchor="middle" class="sk-label">C</text>
+            <rect x="364" y="42" width="42" height="36" rx="4" fill="#5b8cff"/><text x="385" y="65" text-anchor="middle" class="sk-label">A</text>
+
+            <!-- Zeitachse -->
+            <line class="sk-line" x1="70" y1="110" x2="690" y2="110"/>
+            <g class="sk-faint" font-size="11" text-anchor="middle">
+              <text x="70"  y="128">0</text>
+              <text x="154" y="128">2</text>
+              <text x="238" y="128">4</text>
+              <text x="322" y="128">6</text>
+              <text x="406" y="128">8</text>
+              <text x="490" y="128">10</text>
+              <text x="574" y="128">12</text>
+            </g>
+            <g stroke="#5c6672" stroke-width="1">
+              <line x1="70" y1="106" x2="70" y2="114"/>
+              <line x1="154" y1="106" x2="154" y2="114"/>
+              <line x1="238" y1="106" x2="238" y2="114"/>
+              <line x1="322" y1="106" x2="322" y2="114"/>
+              <line x1="406" y1="106" x2="406" y2="114"/>
+              <line x1="490" y1="106" x2="490" y2="114"/>
+              <line x1="574" y1="106" x2="574" y2="114"/>
+            </g>
+
+            <!-- Deadline-Marker: B@6 (x=322), C@9 (x=448), A@13 (x=616) -->
+            <g>
+              <line x1="322" y1="90" x2="322" y2="150" stroke="#f2994a" stroke-width="2" stroke-dasharray="4 3"/>
+              <text x="322" y="166" text-anchor="middle" class="sk-faint" fill="#f2994a">D(B)=6</text>
+              <line x1="448" y1="90" x2="448" y2="150" stroke="#bb6bd9" stroke-width="2" stroke-dasharray="4 3"/>
+              <text x="448" y="166" text-anchor="middle" class="sk-faint" fill="#bb6bd9">D(C)=9</text>
+              <line x1="616" y1="90" x2="616" y2="150" stroke="#5b8cff" stroke-width="2" stroke-dasharray="4 3"/>
+              <text x="616" y="166" text-anchor="middle" class="sk-faint" fill="#5b8cff">D(A)=13</text>
+            </g>
+
+            <!-- Verdrängungsmarker -->
+            <text x="154" y="192" text-anchor="middle" class="sk-faint" fill="#eb5757">↑ V (B verdrängt A)</text>
+            <text x="280" y="192" text-anchor="middle" class="sk-faint" fill="#eb5757">↑ V (C verdrängt A)</text>
+          </svg>
+          <figcaption>EDF-Ablauf: Bei t=2 verdrängt B (Deadline 6) das laufende A; bei t=5 verdrängt C (Deadline 9). Alle Deadlines werden eingehalten (B@4≤6, C@7≤9, A@8≤13).</figcaption>
+        </figure>
+
+        <div class="callout callout--note">
+          <div class="cico">🏆</div>
+          <div class="callout__body">
+            <p><strong>EDF ist optimal</strong> auf einem Einprozessorsystem: Findet
+            <em>irgendeine</em> Reihenfolge alle Deadlines ein, dann findet EDF sie auch.
+            <strong>Aber:</strong> hoher Aufwand (Liste nach Deadlines sortieren), nicht
+            optimal, wenn auch die Startzeit wichtig ist, und <strong>instabil in
+            Überlast</strong> (nahe 100&nbsp;% Auslastung bleibt eine Deadline-Überschreitung
+            nicht isoliert – es kann eine Kettenreaktion geben).</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Wie lautet die EDF-Scheduling-Regel?</summary>
+            <div class="answer">Gib die CPU dem Prozess mit der <strong>frühesten (nächsten)
+              Deadline</strong>; verdränge dabei ggf. den gerade laufenden Prozess.</div>
+          </details>
+          <details class="q">
+            <summary>2. Was bedeutet „EDF ist optimal“?</summary>
+            <div class="answer">EDF findet für eine gegebene Menge von Tasks eine Abfolge, die
+              <strong>alle Deadlines einhält – sofern es überhaupt eine solche Abfolge gibt</strong>
+              (auf einem Einprozessorsystem).</div>
+          </details>
+          <details class="q">
+            <summary>3. Was ist der Unterschied zwischen weicher und harter Echtzeit?</summary>
+            <div class="answer"><strong>Weich:</strong> Verletzung der Rechtzeitigkeit führt zu
+              vermindertem Nutzen. <strong>Hart:</strong> Verletzung führt zu kritischem Schaden.</div>
+          </details>
+          <details class="q">
+            <summary>4. Nenne einen Nachteil von EDF.</summary>
+            <div class="answer">Hoher Aufwand für die Entscheidungsfindung; nicht optimal, wenn
+              die Startzeit wichtig ist; <strong>instabil in Überlastsituationen</strong> (nahe
+              100&nbsp;% Auslastung).</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 5 -->
+      <section class="module" id="modul-5">
+        <div class="module__head">
+          <div class="module__num">5</div>
+          <h2>Echtzeit: RMS &amp; die Auslastungsrechnung</h2>
+        </div>
+
+        <p class="lead">
+          <strong>Rate Monotonic Scheduling (RMS)</strong> ist das zweite große
+          Echtzeit-Verfahren – und die zugehörige <strong>Rechnung</strong> ist eine der
+          häufigsten Klausuraufgaben überhaupt.
+        </p>
+
+        <div class="callout callout--merke">
+          <div class="cico">📏</div>
+          <div class="callout__body">
+            <p><strong>RMS-Regel:</strong> Gib die CPU dem lauffähigen Prozess mit der
+            <strong>kürzesten Periode</strong>; verdränge dabei ggf. den laufenden Prozess.</p>
+            <p><strong>Kürzere Periode → höhere Priorität</strong> (PRIOᵢ = 1/Pᵢ). Die
+            Priorität wird nur <strong>einmal beim Start</strong> berechnet (statische
+            Prioritäten) → sehr effizient. RMS gilt <strong>nur für periodische Tasks</strong>.</p>
+          </div>
+        </div>
+
+        <h3>Die zwei Kriterien</h3>
+        <p>
+          Für <em>n</em> periodische Prozesse mit Periode <em>Pᵢ</em> und Ausführungszeit
+          <em>Cᵢ</em> definiert man die <strong>Gesamtauslastung</strong>
+          U = C₁/P₁ + C₂/P₂ + … + Cₙ/Pₙ. Es gibt zwei Bedingungen:
+        </p>
+        <ul>
+          <li><strong>Notwendiges Kriterium</strong> (sonst unmöglich, aber allein keine Garantie):
+              <br><code style="color:#fff">U = C₁/P₁ + … + Cₙ/Pₙ ≤ 1</code>
+              <br>Die Tasks dürfen die CPU nicht über 100&nbsp;% beanspruchen.</li>
+          <li><strong>Hinreichendes Kriterium</strong> (dann garantiert RMS alle Deadlines):
+              <br><code style="color:#fff">U ≤ n · (2<sup>1/n</sup> − 1)</code>
+              <br>Die Tasks müssen eine gewisse <strong>Reserve</strong> lassen.</li>
+        </ul>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Anzahl Prozesse n</th><th>Auslastungsschranke n·(2<sup>1/n</sup>−1)</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>100&nbsp;%</td></tr>
+              <tr><td>2</td><td>82,8&nbsp;%</td></tr>
+              <tr><td>3</td><td>77,9&nbsp;%</td></tr>
+              <tr><td>→ ∞</td><td>≈ 69,3&nbsp;% (ln 2)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">🧮</div>
+          <div class="callout__body">
+            <p><strong>Vollständig gerechnetes Beispiel</strong> (Vorlesung): Zwei Prozesse.<br>
+            A: Periode P=10&nbsp;ms, Ausführung C=4,5&nbsp;ms &nbsp;·&nbsp; B: Periode P=6&nbsp;ms, Ausführung C=2,0&nbsp;ms.</p>
+            <p><strong>Prioritäten:</strong> B hat die kürzere Periode (6 &lt; 10) → B bekommt
+            die höhere Priorität.</p>
+            <p><strong>Notwendig:</strong> U = 4,5/10 + 2/6 = 0,45 + 0,333 = <strong>0,783 = 78,3&nbsp;%</strong> ≤ 100&nbsp;% ✓</p>
+            <p><strong>Hinreichend (n=2):</strong> Schranke = 82,8&nbsp;%. Da 78,3&nbsp;% ≤ 82,8&nbsp;% ✓
+            → <strong>RMS garantiert die Einhaltung aller Deadlines.</strong></p>
+          </div>
+        </div>
+
+        <p>So sieht der RMS-Ablauf für dieses Beispiel aus (B verdrängt A, weil B die kürzere Periode hat):</p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 190" role="img" aria-label="RMS Zeitdiagramm Beispiel">
+            <text class="sk-sub" x="55" y="55" text-anchor="end">CPU</text>
+            <!-- unit = 50px, x0=70; B[0-2] A[2-6] B[6-8] A[8-8.5] idle A[10-12] -->
+            <rect x="70"  y="38" width="100" height="34" rx="4" fill="#f2994a"/><text x="120" y="60" text-anchor="middle" class="sk-label">B</text>
+            <rect x="170" y="38" width="200" height="34" rx="4" fill="#5b8cff"/><text x="270" y="60" text-anchor="middle" class="sk-label">A</text>
+            <rect x="370" y="38" width="100" height="34" rx="4" fill="#f2994a"/><text x="420" y="60" text-anchor="middle" class="sk-label">B</text>
+            <rect x="470" y="38" width="25" height="34" rx="4" fill="#5b8cff"/>
+            <rect x="570" y="38" width="100" height="34" rx="4" fill="#5b8cff"/><text x="620" y="60" text-anchor="middle" class="sk-label">A</text>
+
+            <!-- Zeitachse -->
+            <line class="sk-line" x1="70" y1="100" x2="700" y2="100"/>
+            <g class="sk-faint" font-size="11" text-anchor="middle">
+              <text x="70" y="118">0</text><text x="170" y="118">2</text><text x="270" y="118">4</text>
+              <text x="370" y="118">6</text><text x="470" y="118">8</text><text x="570" y="118">10</text><text x="670" y="118">12</text>
+            </g>
+
+            <!-- Periodenmarker B (orange) bei 0,6,12 -->
+            <g stroke="#f2994a" stroke-width="1.5">
+              <line x1="70" y1="96" x2="70" y2="132"/><line x1="370" y1="96" x2="370" y2="132"/><line x1="670" y1="96" x2="670" y2="132"/>
+            </g>
+            <text x="220" y="150" text-anchor="middle" class="sk-faint" fill="#f2994a">↑ B-Perioden (alle 6 ms)</text>
+            <!-- Verdrängung -->
+            <text x="370" y="176" text-anchor="middle" class="sk-faint" fill="#eb5757">bei t=6 verdrängt B den Prozess A (kürzere Periode)</text>
+          </svg>
+          <figcaption>RMS: B (Periode 6) hat höhere Priorität als A (Periode 10) und verdrängt A bei jedem neuen B-Start. A wird in den Lücken fertiggerechnet.</figcaption>
+        </figure>
+
+        <div class="callout callout--note">
+          <div class="cico">💡</div>
+          <div class="callout__body">
+            <p><strong>RMS-Bewertung:</strong> sehr einfach &amp; effizient (Priorität nur 1×
+            berechnet), optimal <em>wenn die CPU nicht zu stark ausgelastet ist</em>. RMS kann
+            aber bei hoher Auslastung (&gt; 69,3&nbsp;%) versagen. Trick der Praxis: „weiche“
+            Tasks niedrigst priorisieren – sie nutzen die Reserve nur als „Lückenfüller“.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Woher hat RMS seinen Namen / wie werden die Prioritäten vergeben?</summary>
+            <div class="answer">Von der <strong>Rate</strong> (Häufigkeit) der Tasks: Je
+              <strong>kürzer die Periode</strong> (= höhere Rate f = 1/P), desto
+              <strong>höher die Priorität</strong>. Die Priorität ist <em>monoton</em> in der
+              Rate – daher „Rate Monotonic“.</div>
+          </details>
+          <details class="q">
+            <summary>2. Nenne die notwendige und die hinreichende RMS-Bedingung.</summary>
+            <div class="answer"><strong>Notwendig:</strong> U = ΣCᵢ/Pᵢ ≤ 1.
+              <strong>Hinreichend:</strong> U ≤ n·(2<sup>1/n</sup>−1) (z.&nbsp;B. 82,8&nbsp;% bei
+              n=2, 77,9&nbsp;% bei n=3, ≈69,3&nbsp;% für n→∞).</div>
+          </details>
+          <details class="q">
+            <summary>3. Was bedeutet es, wenn die notwendige, aber nicht die hinreichende Bedingung erfüllt ist?</summary>
+            <div class="answer">Ein Scheduling ist <strong>nicht prinzipiell ausgeschlossen</strong>
+              (U ≤ 1), aber RMS kann die Einhaltung aller Deadlines <strong>nicht garantieren</strong>.
+              Es <em>könnte</em> trotzdem klappen – muss aber im Zweifel per Zeitdiagramm geprüft werden.</div>
+          </details>
+          <details class="q">
+            <summary>4. Für welche Tasks ist RMS anwendbar?</summary>
+            <div class="answer">Nur für <strong>periodische</strong> Tasks (mit fester Periode P).</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 6 -->
+      <section class="module" id="modul-6">
+        <div class="module__head">
+          <div class="module__num">6</div>
+          <h2>Altklausurfragen</h2>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">📝</div>
+          <div class="callout__body">
+            <p><strong>Scheduling kommt in JEDER Klausur vor</strong> – meist als
+            Konzeptfragen (Ziele, Verdrängung, Verfahren) <em>und</em> als Rechenaufgabe
+            (EDF-/RMS-Zeitdiagramm + RMS-Auslastungsrechnung). Hier echte Aufgaben mit
+            vollständigen Lösungen.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">★</span><h3>Aus echten Klausuren</h3><span class="count">6 Aufgaben</span>
+          </div>
+
+          <details class="q">
+            <summary>1. Welche Ziele muss ein Scheduler berücksichtigen? Nennen Sie mindestens sechs. Geben Sie außerdem ein Beispiel für einen Zielkonflikt.</summary>
+            <div class="answer">
+              Sechs Ziele: <strong>Prozessorauslastung, hoher Durchsatz, kurze Antwortzeit,
+              Fairness, kein Verhungern, rechtzeitige Reaktion (Deadlines), Stabilität</strong>.
+              Zielkonflikt: <strong>Durchsatz ↔ Antwortzeit</strong> – hoher Durchsatz will wenige
+              teure Prozesswechsel; kurze Antwortzeit verlangt häufiges Umschalten. Beides zugleich
+              maximal geht nicht.
+              <span class="q-src">Quelle: Klausuren SS 2009 A1, WiSe 2015/16 A1, Übungsfragen 1</span></div>
+          </details>
+
+          <details class="q">
+            <summary>2. Was versteht man unter „Verdrängung“? Wann findet sie statt (drei Ereignisse)?</summary>
+            <div class="answer">
+              Verdrängung = einem aktiven Prozess wird die CPU weggenommen, um sie einem bereiten
+              Prozess zu geben (Aktiv → Bereit). Drei Ereignisse: (1) ein <strong>neuer Prozess</strong>
+              mit höherer Priorität/früherer Deadline kommt an; (2) ein <strong>blockierter Prozess
+              wird wieder bereit</strong> und hat höhere Priorität; (3) die <strong>Zeitscheibe</strong>
+              des laufenden Prozesses läuft ab (Round Robin) bzw. zyklische Prüfung.
+              <span class="q-src">Quelle: Klausur SS 2009 A1c/d, WiSe 2015/16 A1c</span></div>
+          </details>
+
+          <details class="q">
+            <summary>3. Benennen Sie vier Scheduling-Verfahren und beschreiben Sie jedes in 1–2 Sätzen.</summary>
+            <div class="answer">
+              <ul>
+                <li><strong>FCFS:</strong> CPU an den Prozess, der am längsten wartet; keine Verdrängung.</li>
+                <li><strong>SJF:</strong> CPU an den Prozess mit der kürzesten Bearbeitungszeit.</li>
+                <li><strong>Round Robin:</strong> jeder Prozess bekommt reihum eine Zeitscheibe, danach Verdrängung.</li>
+                <li><strong>Prioritätsbasiert:</strong> höchste Priorität zuerst, verdrängt niedrigere.</li>
+              </ul>
+              (Auch möglich: SRT, EDF, RMS.)
+              <span class="q-src">Quelle: Klausur SS 2009 A1e</span></div>
+          </details>
+
+          <details class="q">
+            <summary>4. RMS-Rechnung: Tasks T1 (C=3, P=8), T2 (C=1, P=4), T3 (C=2, P=6). Ist ein erfolgreiches Scheduling grundsätzlich möglich (notwendige Bedingung)? Kann RMS es garantieren (hinreichende Bedingung)?</summary>
+            <div class="answer">
+              <strong>Auslastung:</strong> U = 3/8 + 1/4 + 2/6 = 0,375 + 0,25 + 0,333 =
+              <strong>0,958 = 95,8&nbsp;%</strong>.
+              <ul>
+                <li><strong>Notwendig:</strong> 95,8&nbsp;% ≤ 100&nbsp;% ✓ → ein Scheduling ist
+                    <strong>nicht ausgeschlossen</strong>.</li>
+                <li><strong>Hinreichend (n=3):</strong> Schranke = 3·(2<sup>1/3</sup>−1) =
+                    3·0,2599 = <strong>0,779 = 77,9&nbsp;%</strong>. Da 95,8&nbsp;% &gt; 77,9&nbsp;%
+                    ist die Bedingung <strong>nicht erfüllt</strong> → RMS kann die Einhaltung aller
+                    Deadlines <strong>nicht garantieren</strong> (könnte im Einzelfall dennoch klappen,
+                    zu prüfen per Zeitdiagramm).</li>
+              </ul>
+              <span class="q-src">Quelle: Exam SS 2021 (english) Q2a/b</span></div>
+          </details>
+
+          <details class="q">
+            <summary>5. Was versteht man unter „Prioritätsinvertierung“? Geben Sie ein Beispiel und eine Lösung an.</summary>
+            <div class="answer">
+              Ein <strong>hochpriorer</strong> Prozess A wartet auf ein Betriebsmittel, das ein
+              <strong>niedrigpriorer</strong> Prozess C hält. C kommt aber nicht dran, weil ein
+              <strong>mittelpriorer</strong> Langläufer B die CPU belegt. → A kommt trotz höchster
+              Priorität nicht voran (Prioritäten „invertiert“). <strong>Lösung (Priority
+              Boost):</strong> C (bzw. ein zu lange wartender Prozess) bekommt vorübergehend eine
+              höhere Priorität, gibt das Betriebsmittel frei, dann kann A fortfahren.
+              <span class="q-src">Quelle: Klausur WS 2019/20 A2d/e, Übungsfragen 1</span></div>
+          </details>
+
+          <details class="q">
+            <summary>6. Warum wird EDF als „optimales“ Scheduling bezeichnet – und wo liegt die Grenze?</summary>
+            <div class="answer">
+              EDF ist auf einem Einprozessorsystem <strong>optimal</strong>: Existiert überhaupt eine
+              Reihenfolge, die alle Deadlines einhält, dann <strong>findet EDF sie</strong>. Grenze:
+              hoher Verwaltungsaufwand und <strong>instabiles Verhalten in Überlast</strong>
+              (nahe 100&nbsp;% Auslastung kann eine Deadline-Überschreitung eine Kettenreaktion auslösen).
+              <span class="q-src">Quelle: Vorlesung „EDF – Bewertung“ (Folie 5-30), Klausur SS 2007 A2</span></div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Kapitel-Navigation -->
+      <nav class="chapter-nav">
+        <a class="prev" href="kapitel-03.html">
+          <span class="dir">← Vorheriges</span>
+          <span class="ttl">3 · Prozesse</span>
+        </a>
+        <a class="next" href="kapitel-05.html">
+          <span class="dir">Nächstes →</span>
+          <span class="ttl">5 · Threads</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="js/chapter.js"></script>
+</body>
+</html>
