@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kapitel 7 · Kommunikation · Betriebssysteme</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/chapter.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>" />
+</head>
+<body class="chapter" style="--chapter-accent:#27ae60;">
+  <div class="progress"></div>
+
+  <!-- ============================================================ TOPBAR -->
+  <div class="topbar">
+    <div class="topbar__inner">
+      <a class="home" href="index.html">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg>
+        Hub
+      </a>
+      <span class="crumb">Kapitel 07 · <b>Kommunikation</b></span>
+      <span class="spacer"></span>
+      <a class="pdf-link" href="Themen/OS_7_Kommunikation.pdf" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Skript-PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- ============================================================ LAYOUT -->
+  <div class="chapter-layout">
+
+    <!-- Inhaltsverzeichnis -->
+    <nav class="toc">
+      <div class="toc-title">Module</div>
+      <ol>
+        <li><a href="#modul-1"><span class="mod-num">1</span>Kommunikation vs. Kooperation</a></li>
+        <li><a href="#modul-2"><span class="mod-num">2</span>Synchron vs. asynchron</a></li>
+        <li><a href="#modul-3"><span class="mod-num">3</span>Kanäle &amp; Signale</a></li>
+        <li><a href="#modul-4"><span class="mod-num">4</span>Kooperation &amp; Shared Memory</a></li>
+        <li><a href="#modul-5"><span class="mod-num">5</span>Altklausurfragen</a></li>
+      </ol>
+    </nav>
+
+    <!-- Hauptinhalt -->
+    <main class="content">
+
+      <!-- Kapitel-Kopf -->
+      <header class="chapter-hero">
+        <div class="kicker"><span class="ico">📡</span> Kapitel 07</div>
+        <h1>Kommunikation &amp; Kooperation</h1>
+        <p class="intro">
+          Prozesse müssen oft zusammenarbeiten – als Prozessfamilie mit gemeinsamer Aufgabe,
+          als Erzeuger/Verbraucher oder Client/Server. Dazu tauschen sie Informationen aus.
+          Dieses Kapitel behandelt die zwei Grundformen der Interaktion
+          (<strong>Kommunikation</strong> und <strong>Kooperation</strong>), die Varianten des
+          <strong>Nachrichtenaustauschs (IPC)</strong>, Signale sowie <strong>Shared Memory</strong>.
+        </p>
+
+        <div class="goals">
+          <h4>Nach diesem Kapitel kannst du …</h4>
+          <ul>
+            <li>Kommunikation und Kooperation unterscheiden</li>
+            <li>synchrones vs. asynchrones Senden/Empfangen samt Vor- und Nachteilen erklären</li>
+            <li>direkte und indirekte Kanäle (Mailbox, Port) unterscheiden</li>
+            <li>Signale als asynchrone IPC einordnen</li>
+            <li>erklären, wie man mit Nachrichten einen kritischen Abschnitt realisiert</li>
+          </ul>
+        </div>
+      </header>
+
+      <!-- =================================================== MODUL 1 -->
+      <section class="module" id="modul-1">
+        <div class="module__head">
+          <div class="module__num">1</div>
+          <h2>Kommunikation vs. Kooperation</h2>
+        </div>
+
+        <p class="lead">
+          <strong>Interaktion</strong> ist die geordnete Zusammenarbeit und der Austausch von
+          Information zwischen Prozessen. Sie umfasst <strong>Synchronisation/Koordination</strong>
+          (zeitliche Abstimmung) und <strong>Informationsaustausch</strong> (inhaltliche
+          Abstimmung). Der Informationsaustausch hat zwei Grundformen:
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 240" role="img" aria-label="Kommunikation asymmetrisch vs Kooperation symmetrisch">
+            <!-- Trennlinie -->
+            <line x1="360" y1="24" x2="360" y2="216" stroke="#2a3441" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+            <!-- Links: Kommunikation -->
+            <text class="sk-label" x="180" y="30" text-anchor="middle" fill="#27ae60">Kommunikation</text>
+            <text class="sk-faint" x="180" y="48" text-anchor="middle">asymmetrisch · Sender → Empfänger</text>
+            <circle cx="70" cy="130" r="26" fill="color-mix(in srgb,#27ae60 30%,#1a2029)" stroke="#27ae60"/><text x="70" y="135" text-anchor="middle" class="sk-label">P1</text>
+            <circle cx="290" cy="130" r="26" fill="#3a3f47" stroke="#5c6672"/><text x="290" y="135" text-anchor="middle" class="sk-label">P2</text>
+            <path class="sk-arrow" d="M100 130 L258 130" marker-end="url(#k-arr)" stroke="#27ae60"/>
+            <rect x="160" y="112" width="34" height="24" rx="3" fill="#1a2029" stroke="#27ae60"/><text x="177" y="128" text-anchor="middle" class="sk-faint" font-size="10">✉</text>
+            <text class="sk-faint" x="120" y="112" text-anchor="middle">Send</text>
+            <text class="sk-faint" x="248" y="112" text-anchor="middle">Receive</text>
+
+            <!-- Rechts: Kooperation -->
+            <text class="sk-label" x="540" y="30" text-anchor="middle" fill="#27ae60">Kooperation</text>
+            <text class="sk-faint" x="540" y="48" text-anchor="middle">symmetrisch · gemeinsame Objekte</text>
+            <circle cx="450" cy="90" r="26" fill="color-mix(in srgb,#27ae60 30%,#1a2029)" stroke="#27ae60"/><text x="450" y="95" text-anchor="middle" class="sk-label">P1</text>
+            <circle cx="640" cy="90" r="26" fill="color-mix(in srgb,#27ae60 30%,#1a2029)" stroke="#27ae60"/><text x="640" y="95" text-anchor="middle" class="sk-label">P2</text>
+            <rect x="490" y="168" width="110" height="40" rx="6" class="sk-accent"/><text x="545" y="192" text-anchor="middle" class="sk-sub">gemeins. Objekt</text>
+            <path class="sk-arrow" d="M460 116 L520 166" marker-end="url(#k-arr)" stroke="#27ae60"/>
+            <path class="sk-arrow" d="M520 166 L460 116" marker-end="url(#k-arr)" stroke="#27ae60"/>
+            <path class="sk-arrow" d="M630 116 L570 166" marker-end="url(#k-arr)" stroke="#27ae60"/>
+            <path class="sk-arrow" d="M570 166 L630 116" marker-end="url(#k-arr)" stroke="#27ae60"/>
+
+            <defs>
+              <marker id="k-arr" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#27ae60"/></marker>
+            </defs>
+          </svg>
+          <figcaption>Kommunikation ist <strong>asymmetrisch</strong> (ein Sender schickt einem Empfänger eine Nachricht). Kooperation ist <strong>symmetrisch</strong> (beide arbeiten gleichberechtigt auf einem gemeinsamen Objekt).</figcaption>
+        </figure>
+
+        <p>
+          In der einfachsten Form benutzt der Sender die BS-Operation
+          <code>Send(Zielprozess, Nachricht)</code>, der Empfänger
+          <code>Receive(Quellprozess, Nachricht)</code>. Der Standardbegriff dafür ist
+          <strong>IPC (Inter-Process Communication)</strong>. Man unterscheidet IPC nach zwei
+          Merkmalen: <strong>Synchronisierungstyp</strong> (synchron/asynchron) und
+          <strong>Kanaltyp</strong> (direkt/indirekt).
+        </p>
+
+        <div class="callout callout--note">
+          <div class="cico">🧵</div>
+          <div class="callout__body">
+            <p><strong>Warum ist das bei Prozessen aufwändiger als bei Threads?</strong> Threads
+            teilen sich den Adressraum → Zugriff auf gemeinsame Daten ist <em>trivial</em>.
+            Prozesse haben <strong>getrennte Adressräume</strong> → sie brauchen
+            <strong>Betriebssystemunterstützung</strong> (Nachrichten oder Shared Memory), um
+            Informationen auszutauschen.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was ist der Unterschied zwischen Kommunikation und Kooperation?</summary>
+            <div class="answer"><strong>Kommunikation</strong> ist <strong>asymmetrisch</strong>:
+              ein Sender schickt einem Empfänger eine Nachricht (Send/Receive).
+              <strong>Kooperation</strong> ist <strong>symmetrisch</strong>: mehrere Prozesse
+              arbeiten gleichberechtigt auf gemeinsamen Objekten/Daten.</div>
+          </details>
+          <details class="q">
+            <summary>2. Wie heißen die beiden Grundoperationen des Nachrichtenaustauschs?</summary>
+            <div class="answer"><code>Send(Zielprozess, Nachricht)</code> und
+              <code>Receive(Quellprozess, Nachricht)</code>. Der Oberbegriff ist
+              <strong>IPC</strong> (Inter-Process Communication).</div>
+          </details>
+          <details class="q">
+            <summary>3. Warum brauchen Prozesse (anders als Threads) BS-Unterstützung zur Kooperation?</summary>
+            <div class="answer">Weil Prozesse <strong>getrennte Adressräume</strong> haben; sie
+              können nicht einfach auf gemeinsame Variablen zugreifen. Threads dagegen teilen sich
+              den Adressraum (Zugriff trivial).</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 2 -->
+      <section class="module" id="modul-2">
+        <div class="module__head">
+          <div class="module__num">2</div>
+          <h2>Synchrone vs. asynchrone Kommunikation</h2>
+        </div>
+
+        <p class="lead">
+          Sowohl das <strong>Senden</strong> als auch das <strong>Empfangen</strong> kann
+          <em>blockierend (synchron)</em> oder <em>nicht-blockierend (asynchron)</em> sein.
+        </p>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Variante</th><th>Verhalten</th><th>Vor-/Nachteile</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Synchrones Senden<br><span class="sk-sub">(blockierend)</span></td>
+                <td>Sender blockiert, bis die Nachricht empfangen wurde</td>
+                <td>+ kein (bzw. nur 1 Platz) Puffer nötig, implizite Quittierung<br>− Sender kann währenddessen nichts anderes tun</td>
+              </tr>
+              <tr>
+                <td>Asynchrones Senden<br><span class="sk-sub">(nicht-blockierend)</span></td>
+                <td>Sender fährt sofort fort</td>
+                <td>+ Sender kann weiterarbeiten<br>− Puffer nötig; Sender weiß nicht, ob empfangen wurde</td>
+              </tr>
+              <tr>
+                <td>Synchrones Empfangen</td>
+                <td>Empfänger blockiert, bis eine Nachricht eingetroffen ist</td>
+                <td>+ implizite Synchronisation (wacht auf, wenn Arbeit da ist)<br>− kann währenddessen nichts anderes tun</td>
+              </tr>
+              <tr>
+                <td>Asynchrones Empfangen</td>
+                <td>Empfänger fragt zyklisch ab (Busy Wait) <em>oder</em> registriert einen Handler (asynchroner Prozeduraufruf)</td>
+                <td>+ kann an anderen Aufgaben arbeiten<br>− komplexere Programmstruktur</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Die Kombinationsmatrix</h3>
+        <p>Kombiniert man Sender- und Empfängerverhalten, ergeben sich vier Fälle:</p>
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead>
+              <tr><th>Empfänger ↓ &nbsp;/&nbsp; Sender →</th><th>Synchrones Senden</th><th>Asynchrones Senden</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Synchrones Empfangen</td>
+                <td><strong>„Rendezvous“</strong>-Konzept (Client-Server-Programmierung)</td>
+                <td style="background:color-mix(in srgb,#27ae60 16%,transparent);color:#fff"><strong>gebräuchlichste</strong> Kommunikationsform (auch zwischen Rechnern)</td>
+              </tr>
+              <tr>
+                <td>Asynchrones Empfangen</td>
+                <td>ungebräuchlich</td>
+                <td>ebenfalls gebräuchlich (zyklisches Prüfen oder asynchrone E/A-Beendigung)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout--merke">
+          <div class="cico">📌</div>
+          <div class="callout__body">
+            <p><strong>Merke:</strong> <em>Asynchron senden + synchron empfangen</em> ist die
+            <strong>gebräuchlichste</strong> Form (der Sender feuert die Nachricht ab und macht
+            weiter, der Empfänger wartet blockierend, bis Arbeit da ist). <em>Synchron senden +
+            synchron empfangen</em> ist das <strong>Rendezvous</strong> (beide treffen sich).
+            Eine Mischform beim Senden: der Sender blockiert erst, wenn der <strong>Puffer
+            voll</strong> ist – ideal fürs Erzeuger-Verbraucher-Schema.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was ist der Vor- und Nachteil von synchronem (blockierendem) Senden?</summary>
+            <div class="answer"><strong>Vorteil:</strong> kein Puffer nötig, implizite Quittierung
+              (der Sender weiß, dass empfangen wurde). <strong>Nachteil:</strong> Der Sender kann
+              während der Blockade nichts anderes erledigen.</div>
+          </details>
+          <details class="q">
+            <summary>2. Welche zwei Varianten des asynchronen Empfangens gibt es?</summary>
+            <div class="answer"><strong>Variante A (Busy Wait):</strong> der Empfänger fragt
+              zyklisch, ob eine Nachricht da ist. <strong>Variante B (asynchroner
+              Prozeduraufruf):</strong> der Empfänger registriert einen <strong>Handler</strong>;
+              trifft die Nachricht ein, unterbricht das BS das Programm und startet den Handler.</div>
+          </details>
+          <details class="q">
+            <summary>3. Welche Kombination ist die gebräuchlichste Kommunikationsform?</summary>
+            <div class="answer"><strong>Asynchron senden + synchron empfangen</strong> – auch für
+              die Kommunikation zwischen Rechnern.</div>
+          </details>
+          <details class="q">
+            <summary>4. Was versteht man unter einem „Rendezvous“?</summary>
+            <div class="answer"><strong>Synchrones Senden + synchrones Empfangen</strong>: Sender
+              und Empfänger „treffen“ sich – beide blockieren, bis die Nachricht übergeben ist.
+              Typisch für Client-Server-Programmierung.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 3 -->
+      <section class="module" id="modul-3">
+        <div class="module__head">
+          <div class="module__num">3</div>
+          <h2>Kanäle &amp; Signale</h2>
+        </div>
+
+        <p class="lead">
+          Der <strong>Kanaltyp</strong> beschreibt, <em>wie</em> Nachrichten transportiert werden:
+          direkt zwischen zwei Prozessen oder indirekt über eine eigene Instanz.
+        </p>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Direkte Kanäle</th><th>Indirekte Kanäle</th></tr></thead>
+            <tbody>
+              <tr><td>Quelle + Ziel sind <strong>Prozesse</strong></td><td>eigene, unabhängige <strong>Kommunikationsinstanz</strong> mit separater Adresse</td></tr>
+              <tr><td>i.&nbsp;d.&nbsp;R. <strong>1:1</strong>-Kommunikation</td><td><strong>N:M</strong>-Kommunikation möglich</td></tr>
+              <tr><td>meist statische Zuordnung, Partner kennen sich</td><td>Rechteverwaltung; statische oder dynamische Zuordnung (Connect/Disconnect)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 280" role="img" aria-label="Direkter Kanal und indirekter Kanal mit Mailbox">
+            <!-- Direkt -->
+            <text class="sk-faint" x="180" y="30" text-anchor="middle">Direkter Kanal (1:1)</text>
+            <circle cx="70" cy="70" r="24" fill="color-mix(in srgb,#27ae60 30%,#1a2029)" stroke="#27ae60"/><text x="70" y="75" text-anchor="middle" class="sk-sub">P1</text>
+            <circle cx="300" cy="70" r="24" fill="#3a3f47" stroke="#5c6672"/><text x="300" y="75" text-anchor="middle" class="sk-sub">P2</text>
+            <rect x="98" y="63" width="176" height="14" rx="7" fill="#1a2029" stroke="#5c6672"/>
+            <path class="sk-arrow" d="M110 70 L262 70" marker-end="url(#c-arr)" stroke="#27ae60"/>
+
+            <!-- Indirekt: Mailbox N:M -->
+            <text class="sk-faint" x="400" y="30" text-anchor="middle">Indirekter Kanal (N:M) · Mailbox / Queue</text>
+            <!-- Sender -->
+            <circle cx="410" cy="80" r="20" fill="color-mix(in srgb,#27ae60 30%,#1a2029)" stroke="#27ae60"/><text x="410" y="85" text-anchor="middle" class="sk-sub">P1</text>
+            <circle cx="410" cy="150" r="20" fill="color-mix(in srgb,#27ae60 30%,#1a2029)" stroke="#27ae60"/><text x="410" y="155" text-anchor="middle" class="sk-sub">P2</text>
+            <circle cx="410" cy="220" r="20" fill="color-mix(in srgb,#27ae60 30%,#1a2029)" stroke="#27ae60"/><text x="410" y="225" text-anchor="middle" class="sk-sub">Pn</text>
+            <!-- Mailbox -->
+            <g>
+              <rect class="sk-box" x="500" y="130" width="30" height="40"/>
+              <rect class="sk-box" x="530" y="130" width="30" height="40"/>
+              <rect class="sk-box" x="560" y="130" width="30" height="40"/>
+              <rect class="sk-box" x="590" y="130" width="30" height="40"/>
+            </g>
+            <text class="sk-faint" x="560" y="120" text-anchor="middle">Mailbox</text>
+            <!-- Empfänger -->
+            <circle cx="690" cy="110" r="20" fill="#3a3f47" stroke="#5c6672"/><text x="690" y="115" text-anchor="middle" class="sk-sub">Pa</text>
+            <circle cx="690" cy="190" r="20" fill="#3a3f47" stroke="#5c6672"/><text x="690" y="195" text-anchor="middle" class="sk-sub">Pb</text>
+            <!-- Pfeile in Mailbox -->
+            <path class="sk-arrow" d="M430 88 L498 138" marker-end="url(#c-arr)"/>
+            <path class="sk-arrow" d="M430 150 L498 150" marker-end="url(#c-arr)"/>
+            <path class="sk-arrow" d="M430 212 L498 165" marker-end="url(#c-arr)"/>
+            <!-- Pfeile aus Mailbox -->
+            <path class="sk-arrow" d="M622 145 L668 118" marker-end="url(#c-arr)"/>
+            <path class="sk-arrow" d="M622 155 L668 182" marker-end="url(#c-arr)"/>
+
+            <defs>
+              <marker id="c-arr" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#c9d1d9"/></marker>
+            </defs>
+          </svg>
+          <figcaption>Direkter Kanal: 1:1 zwischen zwei Prozessen. Indirekter Kanal: mehrere Sender und Empfänger über eine <strong>Mailbox</strong> (Warteschlange). Ist eine Mailbox genau <em>einem</em> Prozess zugeordnet, spricht man von einem <strong>Port</strong>.</figcaption>
+        </figure>
+
+        <p>
+          Auslieferungsvarianten bei indirekten Kanälen: <strong>FIFO</strong> (in Reihenfolge),
+          <strong>typisiert</strong> (Empfänger holt nur bestimmte Nachrichtentypen/Prioritäten)
+          oder der Empfänger <strong>wählt selbst</strong> aus der Warteschlange. Ein bekanntes
+          Beispiel für Ports sind die <strong>TCP/IP „well-known ports“</strong> (HTTP, FTP …).
+        </p>
+
+        <h3>Kommunikation mit Signalen</h3>
+        <p>
+          <strong>Signale</strong> sind eine Form der <strong>asynchronen IPC</strong> mit
+          einfachen Nachrichten. Ein Signal ist eine Nachricht eines bestimmten Typs
+          (Identifikator, meist Integer). Der Sender (Anwendungsprozess oder BS) „triggert“ ein
+          Signal an einen Empfangsprozess.
+        </p>
+        <div class="callout callout--merke">
+          <div class="cico">⚡</div>
+          <div class="callout__body">
+            <p>Ein <strong>Signal Handler</strong> ist eine Prozedur, die beim Eintreffen eines
+            Signals ausgeführt wird und die laufende Programmausführung <strong>unterbricht</strong>
+            – ein Signal ist das <strong>Software-Analogon zum Hardware-Interrupt</strong>. Gibt es
+            keinen eigenen Handler, greift der <strong>Default Signal Handler</strong> (z.&nbsp;B.
+            Programmabbruch). Spezielle Signaltypen: Laufzeitfehler (Division durch 0, Overflow),
+            Kill-Signale, Timer/Alarme, benutzerdefinierte Signale (SIGUSR).</p>
+          </div>
+        </div>
+        <div class="callout callout--exam">
+          <div class="cico">✅</div>
+          <div class="callout__body">
+            <p><strong>Wichtige Regel (Good Practice):</strong> Ein Signal Handler muss
+            <strong>kurz</strong> sein – <strong>keine E/A-Operationen oder komplexen
+            Systemaufrufe</strong>, weil er gerade laufende Operationen stören könnte. Bewährtes
+            Muster: der Handler setzt nur ein <strong>„Flag“</strong>, das in der Hauptschleife
+            des Empfängerprogramms <strong>zyklisch abgefragt</strong> wird. (Genau dasselbe
+            Flag-Muster wie beim Jacketing/asynchronen Empfangen.)</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was unterscheidet direkte von indirekten Kanälen?</summary>
+            <div class="answer"><strong>Direkt:</strong> Quelle und Ziel sind Prozesse, meist
+              1:1, Partner kennen sich. <strong>Indirekt:</strong> eine eigene
+              Kommunikationsinstanz (Mailbox/Queue) mit separater Adresse, N:M möglich, mit
+              Rechteverwaltung.</div>
+          </details>
+          <details class="q">
+            <summary>2. Was ist ein Port?</summary>
+            <div class="answer">Eine <strong>Mailbox, die genau einem Prozess zugeordnet</strong>
+              ist. Sendevorgänge gehen dann an Ports statt an Prozesse (z.&nbsp;B. TCP/IP well-known
+              ports für HTTP/FTP).</div>
+          </details>
+          <details class="q">
+            <summary>3. Warum ist ein Signal das „Software-Analogon zum Hardware-Interrupt“?</summary>
+            <div class="answer">Weil der Signal Handler die laufende Programmausführung
+              <strong>unterbricht</strong> – so wie ein Hardware-Interrupt die CPU unterbricht –
+              und dann eine Behandlungsroutine ausführt.</div>
+          </details>
+          <details class="q">
+            <summary>4. Warum muss ein Signal Handler kurz sein? Was ist die bewährte Lösung?</summary>
+            <div class="answer">Weil er gerade laufende Operationen (z.&nbsp;B. Systemaufrufe) stören
+              könnte – daher <strong>keine E/A/komplexen Aufrufe</strong> im Handler. Lösung: der
+              Handler setzt nur ein <strong>Flag</strong>, das die Hauptschleife zyklisch abfragt
+              und dort die eigentliche Reaktion ausführt.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 4 -->
+      <section class="module" id="modul-4">
+        <div class="module__head">
+          <div class="module__num">4</div>
+          <h2>Kooperation &amp; Shared Memory</h2>
+        </div>
+
+        <p class="lead">
+          <strong>Kooperation</strong> heißt: mehrere Prozesse arbeiten auf <strong>gemeinsamen
+          Daten</strong>. Das erfordert immer <strong>Synchronisation</strong> – entweder über
+          Synchronisationsdienste (kritische Abschnitte, Semaphore) oder über Kommunikation
+          (Nachrichten).
+        </p>
+
+        <h3>Shared Memory</h3>
+        <p>
+          Beim <strong>Shared Memory</strong> greifen mehrere Prozesse auf denselben
+          Speicherbereich zu. Interessant: derselbe physische Speicher wird oft auf
+          <strong>unterschiedliche virtuelle Adressen</strong> der Prozesse abgebildet (P1 sieht
+          ihn z.&nbsp;B. unter <code>0x3000000</code>, P2 unter <code>0x5000000</code> – aber es ist
+          derselbe Speicherort, vgl. virtueller Speicher, Kap.&nbsp;9).
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 230" role="img" aria-label="Shared Memory zwischen zwei Prozessen">
+            <circle cx="220" cy="60" r="28" fill="color-mix(in srgb,#27ae60 30%,#1a2029)" stroke="#27ae60"/><text x="220" y="65" text-anchor="middle" class="sk-label">P1</text>
+            <circle cx="500" cy="60" r="28" fill="color-mix(in srgb,#27ae60 30%,#1a2029)" stroke="#27ae60"/><text x="500" y="65" text-anchor="middle" class="sk-label">P2</text>
+
+            <!-- Speicherbänder -->
+            <rect class="sk-box" x="60" y="150" width="220" height="46" rx="6"/><text x="170" y="178" text-anchor="middle" class="sk-sub">exklusiv P1</text>
+            <rect x="280" y="150" width="160" height="46" rx="6" fill="color-mix(in srgb,#27ae60 22%,#1a2029)" stroke="#27ae60" stroke-width="1.5"/><text x="360" y="173" text-anchor="middle" class="sk-label" font-size="13">gemeinsam</text><text x="360" y="189" text-anchor="middle" class="sk-faint" font-size="10">(Shared Memory)</text>
+            <rect class="sk-box" x="440" y="150" width="220" height="46" rx="6"/><text x="550" y="178" text-anchor="middle" class="sk-sub">exklusiv P2</text>
+
+            <!-- Pfeile -->
+            <path class="sk-arrow" d="M210 88 L180 148" marker-end="url(#sm-arr)" stroke="#27ae60"/>
+            <path class="sk-arrow" d="M235 88 L330 148" marker-end="url(#sm-arr)" stroke="#27ae60"/>
+            <path class="sk-arrow" d="M510 88 L540 148" marker-end="url(#sm-arr)" stroke="#27ae60"/>
+            <path class="sk-arrow" d="M485 88 L390 148" marker-end="url(#sm-arr)" stroke="#27ae60"/>
+
+            <defs>
+              <marker id="sm-arr" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#27ae60"/></marker>
+            </defs>
+          </svg>
+          <figcaption>Shared Memory: P1 und P2 haben je einen exklusiven Bereich und einen <strong>gemeinsamen</strong> Bereich, über den sie Daten austauschen. Der Zugriff muss synchronisiert werden (z.&nbsp;B. über kritische Abschnitte/Semaphore).</figcaption>
+        </figure>
+
+        <h3>Locking auf gemeinsamen Objekten</h3>
+        <p>
+          Für kombinierte Schreib-/Lesezugriffe auf gemeinsame Objekte (Speicher, Dateien) gibt
+          es verschiedene <strong>Sperrtypen (Lock-Modi)</strong> – parallele Operationen müssen
+          „verträglich“ sein, sonst wird der sperrende Prozess blockiert:
+        </p>
+        <ul>
+          <li><strong>Exclusive Write:</strong> nur 1 Schreiber, keine weiteren Leser</li>
+          <li><strong>Protected Write:</strong> nur 1 Schreiber, aber beliebig viele Leser</li>
+          <li><strong>Concurrent Write:</strong> beliebig viele Schreiber und Leser</li>
+          <li><strong>Protected Read:</strong> mehrere Leser gleichzeitig, aber keine Schreiber</li>
+          <li><strong>Concurrent Read:</strong> weitere Leser und Schreiber erlaubt</li>
+        </ul>
+
+        <div class="callout callout--note">
+          <div class="cico">🔺</div>
+          <div class="callout__body">
+            <p><strong>Zusammenhang der drei Konzepte:</strong> <em>Synchronisation</em>,
+            <em>Kommunikation</em> und <em>Shared Memory</em> sind eng verwandt und lassen sich
+            teilweise gegenseitig ausdrücken:</p>
+            <p>• Aus <strong>Shared Memory + Semaphoren</strong> kann man einen Mailbox-Dienst
+            (Kommunikation) bauen.<br>
+            • Aus <strong>Nachrichtenaustausch</strong> kann man einen kritischen Abschnitt
+            (Synchronisation) realisieren – siehe Modul&nbsp;5.</p>
+          </div>
+        </div>
+
+        <h3>IPC-Dienste in der Praxis</h3>
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>UNIX/Linux</th><th>Windows</th></tr></thead>
+            <tbody>
+              <tr><td><strong>(Named) Pipes</strong> – 1:1, FIFO, blockiert bei voll/leer</td><td><strong>Anonymous / Named Pipes</strong> (Byte- oder Message-Typ)</td></tr>
+              <tr><td><strong>Sockets</strong> – bidirektional, 1:N, bytestream (Netzwerk &amp; lokal)</td><td><strong>Mailslots</strong> – Broadcast 1:N</td></tr>
+              <tr><td><strong>Signale</strong> – <code>sigaction</code>, <code>kill</code>, SIGUSR …</td><td><strong>Shared Memory</strong> (mit File-Mapping)</td></tr>
+              <tr><td><strong>Shared Memory</strong> – <code>shmget/shmat/shmdt</code></td><td>Mutexe, Semaphore, Events</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Was ist Shared Memory und warum liegen die Adressen bei P1 und P2 oft unterschiedlich?</summary>
+            <div class="answer">Ein <strong>gemeinsamer Speicherbereich</strong>, auf den mehrere
+              Prozesse zugreifen. Wegen des <strong>virtuellen Speichers</strong> (Kap.&nbsp;9) wird
+              derselbe physische Bereich auf <strong>unterschiedliche virtuelle Adressen</strong>
+              der Prozesse abgebildet – es ist aber derselbe Speicherort.</div>
+          </details>
+          <details class="q">
+            <summary>2. Was ist eine Pipe und wann blockiert sie?</summary>
+            <div class="answer">Ein <strong>1:1-Pfad</strong> für einen gerichteten Zeichenstrom
+              mit FIFO-Auslieferung. Ist die Pipe <strong>voll</strong>, blockiert der Sender; ist
+              sie <strong>leer</strong>, blockiert der Empfänger. Eine <em>Named Pipe</em> hat einen
+              Dateideskriptor und unterliegt dem Rechtekonzept.</div>
+          </details>
+          <details class="q">
+            <summary>3. Wozu dienen unterschiedliche Lock-Modi?</summary>
+            <div class="answer">Um parallele Schreib-/Lesezugriffe fein abzustufen (z.&nbsp;B.
+              „mehrere Leser, kein Schreiber“). Nur <strong>verträgliche</strong> Operationen dürfen
+              gleichzeitig laufen; sonst wird der sperrende Prozess blockiert.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 5 -->
+      <section class="module" id="modul-5">
+        <div class="module__head">
+          <div class="module__num">5</div>
+          <h2>Altklausurfragen</h2>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">📝</div>
+          <div class="callout__body">
+            <p>„Kommunikation“ ist in den Klausuren ein <strong>Randthema</strong> – es taucht
+            aber im <strong>Synchronisations-Kontext</strong> auf: Das <strong>Rendezvous/die
+            Barriere per Message Passing</strong> (SS 2021) und die Idee, einen kritischen
+            Abschnitt mit Nachrichten zu realisieren. Hier die relevanten Aufgaben mit Lösungen.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">★</span><h3>Klausur- &amp; Konzeptfragen</h3><span class="count">5 Aufgaben</span>
+          </div>
+
+          <details class="q">
+            <summary>1. Realisieren Sie ein „Rendezvous“ (Barriere für zwei Prozesse) mit Nachrichtenaustausch statt mit Semaphoren.</summary>
+            <div class="answer">
+              Jeder Prozess schickt dem anderen eine Nachricht, sobald er an der Barriere ist, und
+              wartet dann <strong>blockierend</strong> auf die Nachricht des anderen:
+              <ul>
+                <li><strong>Prozess 1:</strong> …Befehle vor Barriere…; <code>send(P2, "fertig");</code> <code>receive(P2, msg);</code> …weiter…</li>
+                <li><strong>Prozess 2:</strong> …Befehle vor Barriere…; <code>send(P1, "fertig");</code> <code>receive(P1, msg);</code> …weiter…</li>
+              </ul>
+              Weil beide <em>blockierend empfangen</em>, kommt keiner durch sein <code>receive</code>,
+              bevor der andere gesendet hat → sie „treffen“ sich. (Semaphor-Variante: siehe Kap.&nbsp;6.)
+              <span class="q-src">Quelle: Exam SS 2021 Q1g (Message-Passing-Variante)</span></div>
+          </details>
+
+          <details class="q">
+            <summary>2. Wie kann man mit reinem Nachrichtenaustausch einen kritischen Abschnitt (Mutual Exclusion) realisieren?</summary>
+            <div class="answer">
+              Über ein einziges <strong>„Token“</strong> (eine Nachricht) in einer Mailbox. Zu
+              Beginn wird <strong>genau eine</strong> Token-Nachricht in die Mailbox gelegt. Jeder
+              Prozess:
+              <ul>
+                <li><code>receive(token);</code> &nbsp;<span class="sk-sub">// Eintritt: holt das Token (blockiert, falls keins da)</span></li>
+                <li>… kritischer Abschnitt …</li>
+                <li><code>send(token);</code> &nbsp;<span class="sk-sub">// Austritt: legt das Token zurück</span></li>
+              </ul>
+              Da es nur <strong>ein</strong> Token gibt, kann sich immer nur <strong>ein</strong>
+              Prozess im kritischen Abschnitt befinden → wechselseitiger Ausschluss.
+              <span class="q-src">Quelle: Vorlesung „Zusammenhänge“ (Folie: kritischer Abschnitt via Nachrichten)</span></div>
+          </details>
+
+          <details class="q">
+            <summary>3. Nennen Sie die zwei Grundformen der Interaktion und erklären Sie den Unterschied.</summary>
+            <div class="answer"><strong>Kommunikation</strong> (asymmetrisch): ein Sender schickt
+              einem Empfänger eine Nachricht (Send/Receive). <strong>Kooperation</strong>
+              (symmetrisch): mehrere Prozesse arbeiten gleichberechtigt auf gemeinsamen Objekten/Daten.
+              <span class="q-src">Quelle: Vorlesung „Interaktion von Prozessen“</span></div>
+          </details>
+
+          <details class="q">
+            <summary>4. Ein Empfänger will Nachrichten verarbeiten, aber nebenbei weiterarbeiten. Welche Möglichkeiten hat er und wie funktioniert das bewährte Flag-Muster?</summary>
+            <div class="answer">
+              <strong>Asynchrones Empfangen</strong> – entweder <em>zyklisch abfragen</em> (Busy
+              Wait) oder per <strong>Handler</strong> (asynchroner Prozeduraufruf): Das BS
+              unterbricht bei Eintreffen einer Nachricht/eines Signals das Programm und startet den
+              Handler. <strong>Flag-Muster:</strong> Der (kurze) Handler setzt nur ein
+              <code>flag</code>; die Hauptschleife prüft dieses Flag zyklisch und führt dort die
+              eigentliche, evtl. aufwändige Reaktion aus (keine E/A im Handler).
+              <span class="q-src">Quelle: Vorlesung „Kommunikation mit Signalen“ (Good Practice)</span></div>
+          </details>
+
+          <details class="q">
+            <summary>5. Nennen Sie je zwei IPC-Dienste in UNIX/Linux und Windows.</summary>
+            <div class="answer"><strong>UNIX/Linux:</strong> (Named) Pipes, Sockets, Signale,
+              Shared Memory (<code>shmget</code>). <strong>Windows:</strong> Anonymous/Named Pipes,
+              Mailslots, Shared Memory (File-Mapping), Mutexe/Semaphore.
+              <span class="q-src">Quelle: Vorlesung „IPC-Dienste in UNIX/Windows“</span></div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Kapitel-Navigation -->
+      <nav class="chapter-nav">
+        <a class="prev" href="kapitel-06.html">
+          <span class="dir">← Vorheriges</span>
+          <span class="ttl">6 · Synchronisation</span>
+        </a>
+        <a class="next" href="kapitel-08.html">
+          <span class="dir">Nächstes →</span>
+          <span class="ttl">8 · Deadlocks</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="js/chapter.js"></script>
+</body>
+</html>
