@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kapitel 8 · Deadlocks · Betriebssysteme</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/chapter.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>" />
+</head>
+<body class="chapter" style="--chapter-accent:#e2b93b;">
+  <div class="progress"></div>
+
+  <!-- ============================================================ TOPBAR -->
+  <div class="topbar">
+    <div class="topbar__inner">
+      <a class="home" href="index.html">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg>
+        Hub
+      </a>
+      <span class="crumb">Kapitel 08 · <b>Deadlocks</b></span>
+      <span class="spacer"></span>
+      <a class="pdf-link" href="Themen/OS_8_Deadlocks.pdf" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Skript-PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- ============================================================ LAYOUT -->
+  <div class="chapter-layout">
+
+    <!-- Inhaltsverzeichnis -->
+    <nav class="toc">
+      <div class="toc-title">Module</div>
+      <ol>
+        <li><a href="#modul-1"><span class="mod-num">1</span>Was ist ein Deadlock?</a></li>
+        <li><a href="#modul-2"><span class="mod-num">2</span>Der Betriebsmittelgraph</a></li>
+        <li><a href="#modul-3"><span class="mod-num">3</span>Umgang mit Deadlocks</a></li>
+        <li><a href="#modul-4"><span class="mod-num">4</span>Verhindern &amp; Vermeiden</a></li>
+        <li><a href="#modul-5"><span class="mod-num">5</span>Altklausurfragen</a></li>
+      </ol>
+    </nav>
+
+    <!-- Hauptinhalt -->
+    <main class="content">
+
+      <!-- Kapitel-Kopf -->
+      <header class="chapter-hero">
+        <div class="kicker"><span class="ico">🔗</span> Kapitel 08</div>
+        <h1>Deadlocks</h1>
+        <p class="intro">
+          Ein <strong>Deadlock</strong> (Verklemmung) ist eine <strong>zyklische
+          Wartebeziehung</strong>: Prozesse blockieren sich gegenseitig, weil jeder eine
+          Ressource hält, die ein anderer braucht. Dieses Kapitel klärt die vier Bedingungen,
+          den <strong>Betriebsmittelgraphen</strong> (die zentrale Klausur-Fähigkeit) und wie
+          man Deadlocks <strong>erkennt, verhindert und vermeidet</strong>.
+        </p>
+
+        <div class="goals">
+          <h4>Nach diesem Kapitel kannst du …</h4>
+          <ul>
+            <li>einen Deadlock definieren und die vier Bedingungen nennen</li>
+            <li>einen Betriebsmittelgraphen zeichnen und auf einen Zyklus (Deadlock) prüfen</li>
+            <li>die vier Umgangsstrategien (Ignorieren, Erkennen, Verhindern, Vermeiden) einordnen</li>
+            <li>Methoden zur Deadlock-Verhinderung nennen und die Idee der Vermeidung erklären</li>
+            <li>bestimmen, welche Prozesse man terminieren muss, um einen Deadlock aufzulösen</li>
+          </ul>
+        </div>
+      </header>
+
+      <!-- =================================================== MODUL 1 -->
+      <section class="module" id="modul-1">
+        <div class="module__head">
+          <div class="module__num">1</div>
+          <h2>Was ist ein Deadlock?</h2>
+        </div>
+
+        <p class="lead">
+          Das klassische Bild ist das <strong>„Dining Philosophers Problem“</strong> (Dijkstra):
+          Fünf Philosophen sitzen am Tisch, zwischen je zweien liegt eine Gabel. Zum Essen
+          braucht jeder <em>zwei</em> Gabeln. Nimmt jeder gleichzeitig die linke Gabel und wartet
+          auf die rechte, wartet <strong>jeder auf jeden</strong> – niemand isst je wieder.
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 480 400" role="img" aria-label="Speisende Philosophen als zyklische Wartebeziehung">
+            <!-- Warte-Kreis -->
+            <circle cx="240" cy="200" r="140" fill="none" stroke="#eb5757" stroke-width="2.5" stroke-dasharray="7 6"/>
+            <path d="M240 60 A 140 140 0 1 1 200 66" fill="none" stroke="#eb5757" stroke-width="2.5" marker-end="url(#d-cyc)"/>
+
+            <!-- Knoten -->
+            <g>
+              <circle cx="240" cy="60"  r="20" fill="color-mix(in srgb,#e2b93b 30%,#1a2029)" stroke="#e2b93b"/><text x="240" y="65" text-anchor="middle" class="sk-sub">P0</text>
+              <circle cx="373" cy="157" r="20" fill="color-mix(in srgb,#e2b93b 30%,#1a2029)" stroke="#e2b93b"/><text x="373" y="162" text-anchor="middle" class="sk-sub">P1</text>
+              <circle cx="322" cy="313" r="20" fill="color-mix(in srgb,#e2b93b 30%,#1a2029)" stroke="#e2b93b"/><text x="322" y="318" text-anchor="middle" class="sk-sub">P2</text>
+              <circle cx="158" cy="313" r="20" fill="color-mix(in srgb,#e2b93b 30%,#1a2029)" stroke="#e2b93b"/><text x="158" y="318" text-anchor="middle" class="sk-sub">P3</text>
+              <circle cx="107" cy="157" r="20" fill="color-mix(in srgb,#e2b93b 30%,#1a2029)" stroke="#e2b93b"/><text x="107" y="162" text-anchor="middle" class="sk-sub">P4</text>
+            </g>
+            <g>
+              <rect x="308" y="73"  width="28" height="28" rx="3" class="sk-box"/><text x="322" y="92"  text-anchor="middle" class="sk-faint">G1</text>
+              <rect x="359" y="229" width="28" height="28" rx="3" class="sk-box"/><text x="373" y="248" text-anchor="middle" class="sk-faint">G2</text>
+              <rect x="226" y="326" width="28" height="28" rx="3" class="sk-box"/><text x="240" y="345" text-anchor="middle" class="sk-faint">G3</text>
+              <rect x="93"  y="229" width="28" height="28" rx="3" class="sk-box"/><text x="107" y="248" text-anchor="middle" class="sk-faint">G4</text>
+              <rect x="144" y="73"  width="28" height="28" rx="3" class="sk-box"/><text x="158" y="92"  text-anchor="middle" class="sk-faint">G0</text>
+            </g>
+
+            <text x="240" y="205" text-anchor="middle" class="sk-label" fill="#eb5757" font-size="13">zyklische</text>
+            <text x="240" y="223" text-anchor="middle" class="sk-label" fill="#eb5757" font-size="13">Wartebeziehung</text>
+
+            <defs>
+              <marker id="d-cyc" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#eb5757"/></marker>
+            </defs>
+          </svg>
+          <figcaption>Jeder Philosoph Pᵢ hält eine Gabel Gᵢ und wartet auf die des Nachbarn. Die Wartebeziehungen bilden einen <strong>geschlossenen Kreis</strong> → Deadlock.</figcaption>
+        </figure>
+
+        <h3>Die vier Bedingungen für einen Deadlock</h3>
+        <p>Ein Deadlock kann nur entstehen, wenn <strong>alle vier</strong> Bedingungen gleichzeitig gelten (Coffman-Bedingungen):</p>
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>#</th><th>Bedingung</th><th>Bedeutung</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Mutual Exclusion<br><span class="sk-sub">wechselseitiger Ausschluss</span></td><td>Ressourcen sind nur <strong>exklusiv</strong> von einem Prozess nutzbar</td></tr>
+              <tr><td>2</td><td>Hold and Wait<br><span class="sk-sub">Halten &amp; Warten</span></td><td>ein Prozess hält Ressourcen und <strong>fordert gleichzeitig weitere</strong> an</td></tr>
+              <tr><td>3</td><td>No Preemption<br><span class="sk-sub">keine Verdrängung</span></td><td>zugewiesene Ressourcen können <strong>nicht entzogen</strong> werden (nur der Prozess selbst gibt sie frei)</td></tr>
+              <tr><td>4</td><td>Circular Wait<br><span class="sk-sub">zyklisches Warten</span></td><td>es existiert eine <strong>zyklische</strong> Wartebeziehung zwischen Prozessen</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout--merke">
+          <div class="cico">🔑</div>
+          <div class="callout__body">
+            <p><strong>Merksatz:</strong> Ein <strong>Deadlock = zyklische Wartebeziehung</strong>.
+            Eine Gruppe von N Prozessen ist verklemmt, wenn jeder eine Ressource besitzt und
+            gleichzeitig auf eine Ressource wartet, die ein <em>anderer</em> Prozess der Gruppe
+            schon hält. Fällt eine der vier Bedingungen weg, kann kein Deadlock entstehen – genau
+            hier setzt die Verhinderung an (Modul&nbsp;4).</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Definiere einen Deadlock in einem Satz.</summary>
+            <div class="answer">Ein Deadlock ist eine <strong>zyklische Wartebeziehung</strong>: Eine
+              Gruppe von Prozessen blockiert sich gegenseitig, weil jeder eine Ressource hält und auf
+              eine wartet, die ein anderer Prozess der Gruppe bereits besitzt.</div>
+          </details>
+          <details class="q">
+            <summary>2. Nenne die vier Bedingungen für einen Deadlock.</summary>
+            <div class="answer"><strong>Mutual Exclusion</strong> (exklusive Ressourcen),
+              <strong>Hold and Wait</strong> (Halten &amp; weiter anfordern), <strong>No
+              Preemption</strong> (keine Entziehung) und <strong>Circular Wait</strong> (zyklisches
+              Warten). Alle vier müssen gleichzeitig gelten.</div>
+          </details>
+          <details class="q">
+            <summary>3. Warum entsteht beim Philosophen-Problem ein Deadlock?</summary>
+            <div class="answer">Weil jeder Philosoph eine Gabel hält (Hold) und auf die zweite,
+              vom Nachbarn gehaltene Gabel wartet (Wait) – die Gabeln sind exklusiv (Mutual
+              Exclusion) und werden nicht freigegeben (No Preemption). Es entsteht ein
+              geschlossener Kreis (Circular Wait).</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 2 -->
+      <section class="module" id="modul-2">
+        <div class="module__head">
+          <div class="module__num">2</div>
+          <h2>Der Betriebsmittelgraph</h2>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">⭐</div>
+          <div class="callout__body">
+            <p><strong>Wichtigste Klausur-Fähigkeit dieses Kapitels!</strong> Fast jede Deadlock-Aufgabe
+            verlangt, aus Wartebeziehungen einen <strong>Betriebsmittelgraphen</strong> (auch:
+            Ressourcen- oder Zyklengraph) zu zeichnen und auf einen Zyklus zu prüfen.</p>
+          </div>
+        </div>
+
+        <p class="lead">
+          Im Betriebsmittelgraphen sind <strong>Prozesse Kreise</strong> und
+          <strong>Betriebsmittel Rechtecke</strong>. Es gibt zwei Arten von Pfeilen:
+        </p>
+
+        <figure class="sketch">
+          <svg viewBox="0 0 720 320" role="img" aria-label="Betriebsmittelgraph Notation und 2-Prozess-Deadlock">
+            <!-- Legende -->
+            <rect x="40" y="30" width="40" height="34" rx="3" class="sk-box"/><text x="60" y="52" text-anchor="middle" class="sk-sub">R</text>
+            <circle cx="180" cy="47" r="20" fill="#3a3f47" stroke="#5c6672"/><text x="180" y="52" text-anchor="middle" class="sk-sub">P</text>
+            <path class="sk-arrow" d="M82 47 L158 47" marker-end="url(#bg-arr)"/>
+            <text x="120" y="82" text-anchor="middle" class="sk-faint">R ist P zugeordnet (belegt)</text>
+
+            <circle cx="440" cy="47" r="20" fill="#3a3f47" stroke="#5c6672"/><text x="440" y="52" text-anchor="middle" class="sk-sub">P</text>
+            <rect x="560" y="30" width="40" height="34" rx="3" class="sk-box"/><text x="580" y="52" text-anchor="middle" class="sk-sub">R</text>
+            <path class="sk-arrow" d="M462 47 L556 47" marker-end="url(#bg-arr)"/>
+            <text x="510" y="82" text-anchor="middle" class="sk-faint">P wartet auf R</text>
+
+            <line class="sk-line" x1="40" y1="108" x2="680" y2="108" stroke-dasharray="4 4"/>
+            <text x="360" y="132" text-anchor="middle" class="sk-label">Beispiel: Deadlock zwischen zwei Prozessen</text>
+
+            <!-- 2-Prozess-Zyklus -->
+            <circle cx="200" cy="185" r="26" fill="color-mix(in srgb,#e2b93b 30%,#1a2029)" stroke="#e2b93b"/><text x="200" y="190" text-anchor="middle" class="sk-label">P1</text>
+            <circle cx="520" cy="270" r="26" fill="color-mix(in srgb,#e2b93b 30%,#1a2029)" stroke="#e2b93b"/><text x="520" y="275" text-anchor="middle" class="sk-label">P2</text>
+            <rect x="500" y="160" width="42" height="42" rx="4" class="sk-box"/><text x="521" y="186" text-anchor="middle" class="sk-sub">R2</text>
+            <rect x="180" y="250" width="42" height="42" rx="4" class="sk-box"/><text x="201" y="276" text-anchor="middle" class="sk-sub">R1</text>
+
+            <!-- Zyklus-Pfeile (rot) -->
+            <path d="M222 250 L210 213" fill="none" stroke="#eb5757" stroke-width="2.2" marker-end="url(#bg-red)"/>
+            <text x="150" y="235" text-anchor="middle" class="sk-faint" fill="#eb5757">R1→P1</text>
+            <path d="M224 178 L497 172" fill="none" stroke="#eb5757" stroke-width="2.2" marker-end="url(#bg-red)"/>
+            <text x="360" y="163" text-anchor="middle" class="sk-faint" fill="#eb5757">P1 wartet auf R2</text>
+            <path d="M519 202 L520 242" fill="none" stroke="#eb5757" stroke-width="2.2" marker-end="url(#bg-red)"/>
+            <text x="575" y="235" text-anchor="middle" class="sk-faint" fill="#eb5757">R2→P2</text>
+            <path d="M496 278 L224 200" fill="none" stroke="#eb5757" stroke-width="2.2" marker-end="url(#bg-red)"/>
+            <text x="360" y="300" text-anchor="middle" class="sk-faint" fill="#eb5757">P2 wartet auf R1</text>
+
+            <defs>
+              <marker id="bg-arr" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#c9d1d9"/></marker>
+              <marker id="bg-red" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#eb5757"/></marker>
+            </defs>
+          </svg>
+          <figcaption>Notation: <code>R → P</code> = Ressource R ist P zugeordnet; <code>P → R</code> = P wartet auf R. Der rote Kreis (P1 → R2 → P2 → R1 → P1) ist ein <strong>Zyklus = Deadlock</strong>.</figcaption>
+        </figure>
+
+        <div class="callout callout--merke">
+          <div class="cico">🔎</div>
+          <div class="callout__body">
+            <p><strong>Deadlock-Erkennung (Detection):</strong> Man sucht <strong>Zyklen</strong> im
+            Graphen – per Tiefensuche oder Breitensuche (vgl. Algorithmen &amp; Datenstrukturen).
+            <strong>Ein einziger gefundener Zyklus = ein Deadlock im System.</strong> (Bei genau
+            einem Exemplar pro Betriebsmittel gilt: Zyklus ⇔ Deadlock.)</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Wie werden Prozesse und Betriebsmittel im Graphen dargestellt?</summary>
+            <div class="answer">Prozesse als <strong>Kreise</strong>, Betriebsmittel als
+              <strong>Rechtecke</strong>.</div>
+          </details>
+          <details class="q">
+            <summary>2. Was bedeuten die Pfeile R→P und P→R?</summary>
+            <div class="answer"><code>R → P</code>: die Ressource R ist dem Prozess P
+              <strong>zugeordnet</strong> (P belegt R). <code>P → R</code>: der Prozess P
+              <strong>wartet</strong> auf die Ressource R.</div>
+          </details>
+          <details class="q">
+            <summary>3. Woran erkennt man einen Deadlock im Graphen?</summary>
+            <div class="answer">An einem <strong>Zyklus</strong>. Ein gefundener Zyklus bedeutet
+              (bei einem Exemplar pro Betriebsmittel) einen Deadlock. Man findet ihn per Tiefen-
+              oder Breitensuche.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 3 -->
+      <section class="module" id="modul-3">
+        <div class="module__head">
+          <div class="module__num">3</div>
+          <h2>Umgang mit Deadlocks</h2>
+        </div>
+
+        <p class="lead">
+          Es gibt <strong>vier grundsätzliche Strategien</strong>, mit Deadlocks umzugehen –
+          von „gar nichts tun“ bis „aktiv verhindern“.
+        </p>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Strategie</th><th>Idee</th><th>Anmerkung</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>1. Ignorieren<br><span class="sk-sub">„Vogel-Strauß“ / Ostrich</span></td>
+                <td>Nichts tun; Anwendung/User löst manuell oder ein <strong>Watchdog</strong> macht irgendwann einen System-Reset</td>
+                <td>problematisch, aber in der Praxis oft sinnvoll (Deadlocks sind selten)</td>
+              </tr>
+              <tr>
+                <td>2. Erkennen<br><span class="sk-sub">Detection</span></td>
+                <td>Zyklen im Graphen erkennen, aber <strong>nicht automatisch</strong> lösen</td>
+                <td>Anwendung bekommt eine Fehlermeldung</td>
+              </tr>
+              <tr>
+                <td>3. Verhindern<br><span class="sk-sub">Prevention</span></td>
+                <td><strong>Konstruktive</strong> Vorsichtsmaßnahmen bei der Anforderung von Ressourcen (eine der 4 Bedingungen ausschließen)</td>
+                <td>Teil der Programmentwicklung (statisch)</td>
+              </tr>
+              <tr>
+                <td>4. Vermeiden<br><span class="sk-sub">Avoidance</span></td>
+                <td>An die Situation angepasste, <strong>vorsichtige</strong> Anforderungsstrategie <strong>zur Laufzeit</strong></td>
+                <td>gewährt Anforderungen nur, wenn der Zustand danach „sicher“ bleibt</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout--note">
+          <div class="cico">🩹</div>
+          <div class="callout__body">
+            <p><strong>Was tun, wenn ein Deadlock erkannt wurde?</strong> Wenn möglich die
+            <strong>letzte Ressourcenanforderung revidieren</strong> oder den Prozess auf einen
+            früheren <strong>Checkpoint zurücksetzen</strong>. Sonst: <strong>Abbruch</strong> eines
+            oder mehrerer verklemmter Prozesse – die Auswahl z.&nbsp;B. nach Effizienzkriterien (etwa
+            den Prozess mit der bisher <em>geringsten</em> aufgelaufenen CPU-Zeit abbrechen, um
+            wenig Arbeit zu verlieren). In der Praxis häufig: <strong>Timeouts (Watchdog)</strong>.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">3 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Nenne die vier Strategien im Umgang mit Deadlocks.</summary>
+            <div class="answer"><strong>Ignorieren</strong> (Vogel-Strauß), <strong>Erkennen</strong>
+              (Detection), <strong>Verhindern</strong> (Prevention) und <strong>Vermeiden</strong>
+              (Avoidance).</div>
+          </details>
+          <details class="q">
+            <summary>2. Was ist der Unterschied zwischen Verhindern und Vermeiden?</summary>
+            <div class="answer"><strong>Verhindern (Prevention):</strong> <em>konstruktiv/statisch</em>
+              – man baut das Programm so, dass eine der vier Bedingungen nie gilt.
+              <strong>Vermeiden (Avoidance):</strong> <em>zur Laufzeit</em> – man gewährt eine
+              Ressourcenanforderung nur, wenn der resultierende Zustand „sicher“ bleibt.</div>
+          </details>
+          <details class="q">
+            <summary>3. Nach welchem Kriterium wählt man einen abzubrechenden Prozess?</summary>
+            <div class="answer">Nach <strong>Effizienzkriterien</strong> – z.&nbsp;B. den Prozess mit
+              der <strong>geringsten bisher aufgelaufenen CPU-Zeit</strong> abbrechen (dann geht am
+              wenigsten Arbeit verloren). Wenn möglich vorher Revidierung/Checkpoint-Rücksetzung.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 4 -->
+      <section class="module" id="modul-4">
+        <div class="module__head">
+          <div class="module__num">4</div>
+          <h2>Verhindern &amp; Vermeiden</h2>
+        </div>
+
+        <p class="lead">
+          <strong>Verhinderung</strong> heißt: eine der vier Bedingungen konstruktiv ausschließen.
+          Vier Methoden aus der Vorlesung:
+        </p>
+
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Methode</th><th>schließt aus</th><th>Bewertung</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Alle Ressourcen <strong>gleichzeitig</strong> anfordern</td>
+                <td>Hold and Wait</td>
+                <td>+ einfach &nbsp; − Anwendung muss alles im Voraus kennen; ineffiziente Nutzung (früh belegt, spät gebraucht)</td>
+              </tr>
+              <tr>
+                <td>Ressourcen <strong>durchnummerieren</strong>, in aufsteigender Reihenfolge anfordern</td>
+                <td>Circular Wait</td>
+                <td>+ einfach &nbsp; − Programm muss so strukturiert sein, dass es die Reihenfolge einhalten kann</td>
+              </tr>
+              <tr>
+                <td><strong>Spooling</strong>: eine Ressource nur einem „Server“-Prozess zuordnen</td>
+                <td>Mutual Exclusion</td>
+                <td>+ kein Deadlock über diese Ressource &nbsp; − nur begrenzt einsetzbar (z.&nbsp;B. Drucker)</td>
+              </tr>
+              <tr>
+                <td><strong>Sperrhierarchien</strong> (Synchronisationstypen hierarchisch einsetzen)</td>
+                <td>Circular Wait</td>
+                <td>gute Praxis; <strong>nie</strong> einen Semaphor aufrufen, während man in einem kritischen Abschnitt ist</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout--note">
+          <div class="cico">🍴</div>
+          <div class="callout__body">
+            <p><strong>Beispiel Philosophen (Nummerierung):</strong> Nummeriere die Gabeln. Jeder
+            Philosoph fordert immer <strong>zuerst die Gabel mit der kleineren Nummer</strong> an,
+            dann die größere. Dadurch kann kein geschlossener Kreis mehr entstehen – der „letzte“
+            Philosoph greift in umgekehrter Reihenfolge, und der Zyklus bricht auf.</p>
+          </div>
+        </div>
+
+        <h3>Deadlock-Vermeidung (Avoidance)</h3>
+        <p>
+          Die Grundidee: Bei jeder neuen Anforderung <strong>wachsam</strong> sein und sie nur
+          gewähren, wenn der Zustand danach <strong>„sicher“</strong> bleibt.
+        </p>
+        <div class="table-wrap">
+          <table class="cmp">
+            <thead><tr><th>Zustand</th><th>Bedeutung</th></tr></thead>
+            <tbody>
+              <tr><td>Sicher</td><td>Es gibt <strong>mindestens eine</strong> Scheduling-Reihenfolge, die <strong>nicht</strong> zum Deadlock führt – selbst wenn alle anderen Prozesse sofort ihre <strong>maximale</strong> Ressourcenzahl anfordern.</td></tr>
+              <tr><td>Unsicher</td><td>Wenn alle Prozesse sofort ihre maximale Zahl anfordern würden, <strong>gäbe es einen Deadlock</strong>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout callout--merke">
+          <div class="cico">🏦</div>
+          <div class="callout__body">
+            <p>Man nutzt den <strong>Betriebsmittelgraphen + eine Vorhersage</strong> und lässt
+            konservativ <strong>Sicherheitsreserven</strong>. Der klassische Algorithmus dafür ist
+            der <strong>Bankier-Algorithmus</strong> (Banker's Algorithm).
+            <br><strong>+</strong> vermeidet Deadlocks und die Vorab-Belegung aller Ressourcen.
+            <strong>−</strong> die <strong>Gesamtmenge der Anforderungen muss vorab bekannt</strong> sein.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">?</span><h3>Verständnisfragen</h3><span class="count">4 Fragen</span>
+          </div>
+          <details class="q">
+            <summary>1. Wie verhindert „aufsteigende Nummerierung“ einen Deadlock?</summary>
+            <div class="answer">Sie schließt <strong>Circular Wait</strong> aus: Wenn alle Prozesse
+              Ressourcen nur in aufsteigender Nummern-Reihenfolge anfordern, kann keine zyklische
+              Wartebeziehung entstehen.</div>
+          </details>
+          <details class="q">
+            <summary>2. Wie macht Spooling den gegenseitigen Ausschluss unnötig?</summary>
+            <div class="answer">Die Ressource (z.&nbsp;B. Drucker) wird <strong>nur einem Server-Prozess
+              (Spooler)</strong> zugeordnet; alle anderen schicken ihre Aufträge an diesen. Da nur
+              der Spooler zugreift, kann es über diese Ressource keinen Deadlock geben. Nachteil:
+              nur für manche Betriebsmittel möglich.</div>
+          </details>
+          <details class="q">
+            <summary>3. Was bedeutet ein „sicherer“ Zustand bei der Vermeidung?</summary>
+            <div class="answer">Es existiert <strong>mindestens eine Reihenfolge</strong>, in der alle
+              Prozesse fertig werden können – selbst wenn sie alle sofort ihre <strong>maximale</strong>
+              Ressourcenzahl anfordern. Nur Anforderungen, die den Zustand sicher lassen, werden gewährt.</div>
+          </details>
+          <details class="q">
+            <summary>4. Was ist der Hauptnachteil der Deadlock-Vermeidung?</summary>
+            <div class="answer">Die <strong>Gesamtmenge der (maximalen) Anforderungen jedes Prozesses
+              muss im Voraus bekannt</strong> sein, damit der Algorithmus die Sicherheit prüfen kann.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- =================================================== MODUL 5 -->
+      <section class="module" id="modul-5">
+        <div class="module__head">
+          <div class="module__num">5</div>
+          <h2>Altklausurfragen</h2>
+        </div>
+
+        <div class="callout callout--exam">
+          <div class="cico">📝</div>
+          <div class="callout__body">
+            <p><strong>Deadlocks kommen häufig dran</strong> – meist als <strong>Zyklengraph zeichnen
+            und auf Deadlock prüfen</strong> (SS11, SS21, SS09, WS1920), oft kombiniert mit
+            Synchronisation. Dazu: Deadlock auflösen und Verhinderungsmethoden nennen. Hier die
+            echten Aufgaben mit Lösungen.</p>
+          </div>
+        </div>
+
+        <div class="questions">
+          <div class="questions__head">
+            <span class="q-ico">★</span><h3>Aus echten Klausuren</h3><span class="count">5 Aufgaben</span>
+          </div>
+
+          <details class="q">
+            <summary>1. Fünf Prozesse, sechs Betriebsmittel: P1 belegt B2 fordert B5; P2 belegt B6 fordert B2+B3; P3 belegt B3 fordert B1; P4 belegt B1 fordert B6; P5 belegt B5 fordert B4. Zyklengraph zeichnen — gibt es einen Deadlock?</summary>
+            <div class="answer">
+              <strong>Ja, es gibt einen Deadlock</strong> im Zyklus <strong>P2 → B3 → P3 → B1 → P4 → B6 → P2</strong>:
+              <figure class="sketch" style="margin:14px 0">
+                <svg viewBox="0 0 560 340" role="img" aria-label="Zyklengraph SS11 mit Deadlock P2-P3-P4">
+                  <!-- Deadlock-Zyklus (Hexagon) -->
+                  <circle cx="150" cy="70"  r="24" fill="color-mix(in srgb,#eb5757 28%,#1a2029)" stroke="#eb5757"/><text x="150" y="75" text-anchor="middle" class="sk-sub">P2</text>
+                  <rect x="286" y="46" width="44" height="44" rx="4" fill="color-mix(in srgb,#eb5757 18%,#1a2029)" stroke="#eb5757"/><text x="308" y="72" text-anchor="middle" class="sk-sub">B3</text>
+                  <circle cx="430" cy="150" r="24" fill="color-mix(in srgb,#eb5757 28%,#1a2029)" stroke="#eb5757"/><text x="430" y="155" text-anchor="middle" class="sk-sub">P3</text>
+                  <rect x="286" y="238" width="44" height="44" rx="4" fill="color-mix(in srgb,#eb5757 18%,#1a2029)" stroke="#eb5757"/><text x="308" y="264" text-anchor="middle" class="sk-sub">B1</text>
+                  <circle cx="150" cy="262" r="24" fill="color-mix(in srgb,#eb5757 28%,#1a2029)" stroke="#eb5757"/><text x="150" y="267" text-anchor="middle" class="sk-sub">P4</text>
+                  <rect x="46" y="142" width="44" height="44" rx="4" fill="color-mix(in srgb,#eb5757 18%,#1a2029)" stroke="#eb5757"/><text x="68" y="168" text-anchor="middle" class="sk-sub">B6</text>
+
+                  <!-- Zyklus-Pfeile -->
+                  <path d="M174 66 L284 66" fill="none" stroke="#eb5757" stroke-width="2.2" marker-end="url(#ss-red)"/>
+                  <path d="M330 82 L410 138" fill="none" stroke="#eb5757" stroke-width="2.2" marker-end="url(#ss-red)"/>
+                  <path d="M424 174 L330 240" fill="none" stroke="#eb5757" stroke-width="2.2" marker-end="url(#ss-red)"/>
+                  <path d="M284 264 L176 264" fill="none" stroke="#eb5757" stroke-width="2.2" marker-end="url(#ss-red)"/>
+                  <path d="M136 240 L82 188" fill="none" stroke="#eb5757" stroke-width="2.2" marker-end="url(#ss-red)"/>
+                  <path d="M84 148 L138 92" fill="none" stroke="#eb5757" stroke-width="2.2" marker-end="url(#ss-red)"/>
+
+                  <text x="240" y="170" text-anchor="middle" class="sk-label" fill="#eb5757" font-size="12">Deadlock-Zyklus</text>
+                  <text x="240" y="186" text-anchor="middle" class="sk-faint" fill="#eb5757">P2·P3·P4</text>
+                  <defs>
+                    <marker id="ss-red" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#eb5757"/></marker>
+                  </defs>
+                </svg>
+              </figure>
+              P2 wartet auf B3 (hat P3), P3 wartet auf B1 (hat P4), P4 wartet auf B6 (hat P2) → geschlossener Kreis.
+              <br>Die übrigen Prozesse sind <strong>nicht</strong> verklemmt: P5 wartet auf <strong>B4, das frei ist</strong>
+              → P5 kann B4 nehmen, fertig werden und B5 freigeben → P1 bekommt B5 → gibt B2 frei → P2 bekommt B2. Nur der
+              Kreis P2-P3-P4 bleibt hängen.
+              <span class="q-src">Quelle: Klausur SS 2011, Aufgabe 5a/b</span></div>
+          </details>
+
+          <details class="q">
+            <summary>2. (Forts.) Welche Prozesse müssen terminiert werden, damit kein Deadlock mehr existiert? Alle Alternativen.</summary>
+            <div class="answer">
+              Es genügt, <strong>genau einen</strong> der drei Prozesse des Zyklus abzubrechen –
+              das öffnet den Kreis. <strong>Alternativen: P2 ODER P3 ODER P4</strong> (jeweils ein
+              einzelner reicht). Terminiert man z.&nbsp;B. P4, wird B1 frei → P3 kommt durch → B3 frei →
+              P2 kommt durch.
+              <span class="q-src">Quelle: Klausur SS 2011, Aufgabe 5c</span></div>
+          </details>
+
+          <details class="q">
+            <summary>3. Drei Prozesse: P1 hält R5 wartet auf R2; P2 hält R4 wartet auf R3; P3 hält R1+R3 wartet auf R5. Liegt ein Deadlock vor? (Ressourcengraph)</summary>
+            <div class="answer">
+              <strong>Nein, (noch) kein Deadlock.</strong> P1 wartet auf <strong>R2, das frei ist</strong>
+              (kein Prozess hält es) → P1 kann R2 bekommen, fertig werden und <strong>R5 freigeben</strong>.
+              Dadurch wird P3 (wartet auf R5) entblockt, gibt R3 frei → P2 (wartet auf R3) kommt ebenfalls
+              durch. Es existiert also eine Reihenfolge ohne Verklemmung → kein Zyklus im Graphen.
+              <span class="q-src">Quelle: Exam SS 2021 (english), Q1a</span></div>
+          </details>
+
+          <details class="q">
+            <summary>4. (Forts.) P1 hat nun R2 bekommen und fordert eine weitere Ressource an. Welche Ressourcen darf P1 NICHT anfordern, weil es zum Deadlock führen würde?</summary>
+            <div class="answer">
+              P1 hält jetzt R5 und R2. Kritisch sind alle Ressourcen, deren Halter (über eine Wartekette)
+              wieder auf P1 (R5) warten:
+              <ul>
+                <li><strong>R1</strong> (hält P3, P3 wartet auf R5←P1) → Zyklus</li>
+                <li><strong>R3</strong> (hält P3, P3 wartet auf R5←P1) → Zyklus</li>
+                <li><strong>R4</strong> (hält P2, P2 wartet auf R3←P3, P3 wartet auf R5←P1) → Zyklus</li>
+              </ul>
+              → P1 darf <strong>R1, R3 und R4 nicht anfordern</strong>. (Genau das ist
+              <strong>Deadlock-Vermeidung</strong> per Ressourcengraph: Anforderungen, die zu einem
+              Zyklus führen würden, werden nicht gewährt.)
+              <span class="q-src">Quelle: Exam SS 2021 (english), Q1b/c</span></div>
+          </details>
+
+          <details class="q">
+            <summary>5. Warum ist die Zyklenanalyse zur Deadlock-Verhinderung im Allgemeinen nicht praktikabel? Nennen Sie außerdem zwei Methoden zur Deadlock-Verhinderung.</summary>
+            <div class="answer">
+              <strong>Nicht praktikabel,</strong> weil man den Graphen <strong>bei jeder
+              Ressourcenanforderung</strong> neu aufbauen und auf Zyklen prüfen müsste – das ist zur
+              Laufzeit zu <strong>aufwändig</strong>; zudem <strong>erkennt</strong> die Analyse einen
+              Deadlock nur (Detection), sie <em>verhindert</em> ihn nicht von sich aus.
+              <br><strong>Zwei Verhinderungsmethoden:</strong> (1) alle Ressourcen <strong>gleichzeitig
+              im Voraus</strong> anfordern (schließt Hold-and-Wait aus); (2) Ressourcen
+              <strong>durchnummerieren</strong> und nur in aufsteigender Reihenfolge anfordern
+              (schließt Circular Wait aus). Auch möglich: Spooling, Sperrhierarchien.
+              <span class="q-src">Quelle: Klausur SS 2011, Aufgabe 5d/e</span></div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Kapitel-Navigation -->
+      <nav class="chapter-nav">
+        <a class="prev" href="kapitel-07.html">
+          <span class="dir">← Vorheriges</span>
+          <span class="ttl">7 · Kommunikation</span>
+        </a>
+        <a class="next" href="kapitel-09.html">
+          <span class="dir">Nächstes →</span>
+          <span class="ttl">9 · Speicherverwaltung</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="js/chapter.js"></script>
+</body>
+</html>
