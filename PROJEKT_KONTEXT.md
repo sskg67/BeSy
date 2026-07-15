@@ -87,7 +87,9 @@ Dateien wurden am 2026-07-07 aus `codebase/html|css|js/` flach ins Root verschob
 - [x] **Kapitel 4 (Scheduling)** fertig — `kapitel-04.html` (6 Module; SVGs: Ziele-Hub, RR-Zeitdiagramm, EDF-Gantt, RMS-Gantt; Modul 6 = SS09 A1, SS08, SS21 Q2 RMS-Rechnung, WS1920 Prioritätsinvertierung)
 - [x] **Kapitel 5 (Threads)** fertig — `kapitel-05.html` (5 Module; SVGs: Thread-Speichermodell, Benutzer-/Kernel-Thread-Modelle; Modul 5 = SS08 A1a/b/c/d/e)
 - [x] **Kapitel 6 (Synchronisation)** fertig — `kapitel-06.html` (5 Module; SVGs: Race-Condition-Bankkonto, Semaphor-Zustandsdiagramm; Modul 5 = SS08 A3a Race min=8/max=24, Ü1 A3c, Semaphor-Semantik, lock-Kritik, Methoden, Rendezvous)
-- [ ] Kapitel 7–10
+- [x] **Kapitel 7 (Kommunikation)** fertig — `kapitel-07.html` (5 Module; SVGs: Komm-vs-Koop, Mailbox-Kanal, Shared Memory; Modul 5 = SS21 Q1g Message-Rendezvous, kritischer Abschnitt per Token, IPC-Dienste). Randthema.
+- [x] **Kapitel 8 (Deadlocks)** fertig — `kapitel-08.html` (5 Module; SVGs: Philosophen-Kreiswartegraph, Betriebsmittelgraph-Notation + 2-Prozess-Zyklus, SS11-Zyklengraph im Exam-Modul; Modul 5 = SS11 A5a-e Deadlock P2-P3-P4, SS21 Q1a/b Ressourcengraph, Verhinderungsmethoden)
+- [ ] Kapitel 9–10
 - [x] Altklausuren-Modul-Muster etabliert (jeweils letztes Modul)
 
 ## Vorlage einer Kapitelseite (an kapitel-01.html orientieren!)
